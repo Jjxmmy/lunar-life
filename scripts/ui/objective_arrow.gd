@@ -1,6 +1,9 @@
 extends Control
 ## Screen-space direction marker for the current NavigationFloor destination.
 
+const SPRITE_CENTER := Vector2(0, -16)
+const ORBIT_RADIUS := 26.0   # clears the 32 px sprite (half is 16)
+
 var navigation: NavigationFloor
 var _pulse := 0.0
 
@@ -27,7 +30,8 @@ func _draw() -> void:
 		return
 	var transform := get_viewport().get_canvas_transform()
 	var target_screen := transform * target_world
-	var player_screen := transform * player.global_position
+	# The pointer orbits the middle of the 32 px sprite, not its feet.
+	var player_screen := transform * (player.global_position + SPRITE_CENTER)
 	var viewport := get_viewport().get_visible_rect().size
 	var visible := Rect2(Vector2(8, 8), viewport - Vector2(16, 16)).has_point(target_screen)
 	var distance := player.global_position.distance_to(target_world)
@@ -43,7 +47,8 @@ func _draw() -> void:
 		var scale_to_edge := minf(half.x / maxf(absf(direction.x), 0.001), half.y / maxf(absf(direction.y), 0.001))
 		player_screen = center + direction * scale_to_edge
 	else:
-		player_screen += direction * 27.0
+		player_screen += direction * ORBIT_RADIUS
+	player_screen = player_screen.round()
 	var pulse := 1.0 + sin(_pulse * 5.0) * 0.12
 	var tip := player_screen + direction * 7.0 * pulse
 	var side := direction.orthogonal() * 4.0 * pulse

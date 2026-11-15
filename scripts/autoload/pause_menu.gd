@@ -8,6 +8,7 @@ const REST_Y := 31.0
 var _open_tween: Tween
 
 var _toggle: Button
+var _sound_button: Button
 var _shade: ColorRect
 var _panel: PanelContainer
 var _content: VBoxContainer
@@ -107,6 +108,11 @@ func _escape() -> void:
 		_show_page("home")
 
 
+func _refresh_sound_label(is_muted: bool) -> void:
+	if is_instance_valid(_sound_button) and _sound_button.is_inside_tree():
+		_sound_button.text = "Sound: %s" % ("off" if is_muted else "on")
+
+
 func _resume() -> void:
 	_page = ""
 	_direct = false
@@ -144,9 +150,12 @@ func _show_page(page: String) -> void:
 			_button("Field notes  %d/%d" % [FieldNotes.unlocked_count(), FieldNotes.NOTES.size()], _show_page.bind("notes"))
 			_button("Tasks", _show_page.bind("tasks"))
 			_button("Help / Controls", _show_page.bind("help"))
-			_button("Sound: %s" % ("off" if Sfx.muted else "on"), func() -> void:
-				Sfx.set_muted(not Sfx.muted)
-				_show_page("home"))
+			# Toggling only changes this one button's text: the page is not rebuilt, so the
+			# panel keeps its size and the button keeps the keyboard focus. The N key does the same.
+			_sound_button = _button("", func() -> void: Sfx.set_muted(not Sfx.muted))
+			if not Sfx.muted_changed.is_connected(_refresh_sound_label):
+				Sfx.muted_changed.connect(_refresh_sound_label)
+			_refresh_sound_label(Sfx.muted)
 			_button("Quit", _show_page.bind("quit"))
 		"help":
 			_heading("FLIGHT MANUAL")

@@ -114,6 +114,8 @@ func _add_navigation(player: Node2D) -> void:
 	nav.add_point("plants", "Plant bench", "Plants", "Learn how grow lights use power.", "station", AcademyLayout.PLANT_SPOT)
 	nav.add_point("exit", "Lander dock", "Lander", "Earn your certificate to unlock departure.", "hatch", AcademyLayout.HATCH_SPOT + Vector2(0, 10))
 	add_child(nav)
+	# Draw the way-finding chevrons on the floor, beneath the y-sorted actors.
+	move_child(nav, get_node("Actors").get_index())
 	var objective_hud := CanvasLayer.new()
 	objective_hud.set_script(load("res://scripts/ui/objective_hud.gd"))
 	add_child(objective_hud)

@@ -12,6 +12,9 @@ var links: Dictionary = {}
 var player: Node2D
 var grid := AStarGrid2D.new()
 var blocked: Array[Rect2] = []
+## Route chevrons closer than this to the astronaut are not drawn.
+const CLEAR_RADIUS := 22.0
+
 var route := PackedVector2Array()
 var arrows := true
 var _built := false
@@ -91,10 +94,13 @@ func _nearest(at: Vector2) -> Vector2i:
 func _draw() -> void:
 	if not arrows:
 		return
+	var player_at := to_local(player.global_position) if is_instance_valid(player) else Vector2(-9999, -9999)
 	for i in range(2, mini(route.size() - 1, 14), 3):
 		var direction := route[i].direction_to(route[i + 1])
 		var side := direction.orthogonal()
 		var at := route[i]
+		if at.distance_to(player_at) < CLEAR_RADIUS:
+			continue
 		var shade := Color(CYAN, 0.65 + sin(_pulse * 5.0 - i * 0.55) * 0.28)
 		draw_polyline(PackedVector2Array([
 			at - direction * 3.0 + side * 3.0,

@@ -414,6 +414,22 @@ func _run() -> void:
 	Input.action_release(&"move_left")
 	_check(_player().position == paused_at and ResourceSim.hour == paused_hour, "pause freezes movement and storm clock")
 	await _shot("16_pause")
+	# Sound toggle while paused: same size, same focus, label follows (button and N key).
+	var pause_panel: Control = PauseMenu.get("_panel")
+	var sound_button: Button
+	for b: Button in PauseMenu.find_children("*", "Button", true, false):
+		if b.text.begins_with("Sound") and b.is_visible_in_tree():
+			sound_button = b
+	var size_before: Vector2 = pause_panel.size
+	sound_button.grab_focus()
+	sound_button.pressed.emit()
+	await _wait(0.15)
+	_check(pause_panel.size == size_before, "toggling Sound keeps the pause menu the same size")
+	_check(get_viewport().gui_get_focus_owner() == sound_button and sound_button.text == "Sound: off", "toggling Sound keeps the focus and updates the label")
+	await _shot("16_pause_sound_off")
+	await _press(&"mute")
+	await _wait(0.15)
+	_check(pause_panel.size == size_before and sound_button.text == "Sound: on", "the N key updates the label without resizing the menu")
 	_check(_click(PauseMenu, "Tasks") and PauseMenu.get("_page") == "tasks", "the task log opens from the pause menu")
 	var tracked_alert := false
 	for button: Button in PauseMenu.find_children("*", "Button", true, false):

@@ -21,6 +21,8 @@ const HUM_DB := -19.0
 const PAD_DB := -15.0
 const SILENT_DB := -60.0
 
+signal muted_changed(is_muted: bool)
+
 var muted: bool = false
 
 var _streams: Dictionary = {}   # StringName -> AudioStream
@@ -133,6 +135,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func set_muted(value: bool) -> void:
 	muted = value
 	AudioServer.set_bus_mute(0, muted)
+	muted_changed.emit(muted)
 	if not muted:
 		play(&"confirm")
 

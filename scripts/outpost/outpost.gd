@@ -140,6 +140,8 @@ func _add_navigation(player: Node2D) -> void:
 	nav.add_point("rivera", "Engineer Rivera", "Rivera", "Ask Rivera about outpost power.", "crew", _rivera.position, _rivera)
 	nav.add_point("tanaka", "Dr. Tanaka", "Tanaka", "Ask Tanaka about the greenhouse.", "crew", _tanaka.position, _tanaka)
 	add_child(nav)
+	# Draw the way-finding chevrons on the floor, beneath the y-sorted actors.
+	move_child(nav, get_node("Actors").get_index())
 	var objective_hud := CanvasLayer.new()
 	objective_hud.set_script(load("res://scripts/ui/objective_hud.gd"))
 	add_child(objective_hud)
