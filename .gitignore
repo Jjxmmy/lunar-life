@@ -2,3 +2,5 @@
 .godot/
 /android/
 setup_spritecook.command
+
+.DS_Store
