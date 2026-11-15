@@ -142,6 +142,11 @@ func can_graduate() -> bool:
 	return &"power_console" in GameState.certifications
 
 
+## Day 1 is complete: certificate plus the selection cards and the robotic-arm drill.
+func academy_done() -> bool:
+	return can_graduate() and GameState.get_flag(&"day1_selection") and GameState.get_flag(&"day1_arm")
+
+
 ## Starts (or restarts) the outpost mission. Keeps the astronaut profile;
 ## resets every mission and simulation value.
 func begin_mission() -> void:

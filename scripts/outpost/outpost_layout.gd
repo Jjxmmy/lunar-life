@@ -34,6 +34,8 @@ const BED_D := Rect2(396, 226, 44, 28)
 const WATER_TANK := Rect2(366, 156, 24, 12)
 const BENCH_WEST := Rect2(168, 54, 44, 10)
 const BENCH_EAST := Rect2(268, 54, 44, 10)
+## Exercise bike in the power room (Day 2 crew health check).
+const BIKE := Rect2(112, 246, 26, 14)
 
 # --- Places (feet positions) ---
 const POWER_SPOT := Vector2(138, 180)
@@ -45,6 +47,7 @@ const ROVER_SPOT := Vector2(96, 290)
 ## Evening log at the comms desk (corridor, west side) and the bunk you sleep in.
 const LOG_SPOT := Vector2(216, 176)
 const BUNK_SPOT := Vector2(338, 208)
+const BIKE_SPOT := Vector2(125, 236)
 
 # --- Crew: where they work, where they wait at the hatch, where they sit out the storm ---
 const TANAKA_HOME := Vector2(424, 210)
@@ -69,7 +72,7 @@ static func beds() -> Array[Rect2]:
 
 
 static func blockers() -> Array[Rect2]:
-	return [BATTERY_BANK, POWER_CONSOLE, CRATES, WORKBENCH, BED_A, BED_B, BED_C, BED_D, WATER_TANK, BENCH_WEST, BENCH_EAST]
+	return [BATTERY_BANK, POWER_CONSOLE, CRATES, WORKBENCH, BED_A, BED_B, BED_C, BED_D, WATER_TANK, BENCH_WEST, BENCH_EAST, BIKE]
 
 
 ## Map units -> world pixels.

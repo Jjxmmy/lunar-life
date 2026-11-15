@@ -26,9 +26,12 @@ func current_objective() -> Dictionary:
 		MissionDirector.Stage.BRIEFING:
 			wanted_id = "Speak with the mentors"
 		MissionDirector.Stage.TRAINING:
-			wanted_id = "Find Engineer Rivera" if not GameState.get_flag(&"mentor_engineer") else "Complete power console training"
+			for id: String in ["Sort the selection cards", "Find Engineer Rivera", "Complete power console training", "Robotic arm drill"]:
+				for task in entries():
+					if task.get("id", "") == id and not task.done:
+						return task
 		MissionDirector.Stage.GRADUATED:
-			wanted_id = "Graduate and travel to the outpost"
+			wanted_id = "Graduate and travel to the outpost" if MissionDirector.academy_done() else ("Robotic arm drill" if not GameState.get_flag(&"day1_arm") else "Sort the selection cards")
 		MissionDirector.Stage.CHECKS:
 			for task in entries():
 				if task.get("facility", "") == "Outpost" and not task.done:
@@ -56,10 +59,12 @@ func entries() -> Array[Dictionary]:
 			mentors_met += 1
 	_add(list, "Speak with the mentors (%d/3)" % mentors_met, "Find Okafor, Rivera and Tanaka in the academy.", mentors_met == 3)
 	if d.stage >= d.Stage.TRAINING:
+		_add(list, "Sort the selection cards", "Talk to Commander Okafor and sort real astronaut requirements from myths.", GameState.get_flag(&"day1_selection"))
+		_add(list, "Robotic arm drill", "Capture three cargo ships with the robotics trainer in the east wing.", GameState.get_flag(&"day1_arm"))
 		_add(list, "Find Engineer Rivera", "Visit the east training workshop and talk to Rivera.", GameState.get_flag(&"mentor_engineer"))
 		_add(list, "Complete power console training", "Postpone a load and keep the battery above empty.", d.can_graduate())
 		_add(list, "Earn your certification", "Pass the training scenario to earn the certificate.", d.can_graduate())
-	if d.can_graduate():
+	if d.academy_done():
 		_add(list, "Graduate and travel to the outpost", "Take the launch hatch on the academy's north-east wall.", GameState.get_flag(&"outpost_visited"))
 	if GameState.get_flag(&"outpost_visited"):
 		for task: Dictionary in d.today_tasks():
@@ -82,6 +87,8 @@ func _add(list: Array[Dictionary], title: String, description: String, done: boo
 		"Find Engineer Rivera": ["Academy", "rivera"],
 		"Complete power console training": ["Academy", "rivera"],
 		"Earn your certification": ["Academy", "rivera"],
+		"Sort the selection cards": ["Academy", "commander"],
+		"Robotic arm drill": ["Academy", "arm"],
 		"Graduate and travel to the outpost": ["Outpost", "entrance"],
 		"Check outpost power": ["Outpost", "power"],
 		"Check the greenhouse": ["Outpost", "crops"],

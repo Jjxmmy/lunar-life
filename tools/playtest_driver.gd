@@ -160,16 +160,105 @@ var _alert_hour := 0
 var _d5 := {}
 
 
+const SPOTS := {
+	"power": [Vector2(150, 212), Vector2(138, 192)],
+	"crops": [Vector2(290, 212), Vector2(378, 212), Vector2(378, 196)],
+	"tanaka": [Vector2(290, 212), Vector2(378, 212), Vector2(416, 212)],
+	"bike": [Vector2(150, 212), Vector2(125, 228)],
+	"log": [Vector2(222, 188)],
+	"bunk": [Vector2(290, 212), Vector2(338, 214)],
+	"shelter": [Vector2(240, 140)],
+}
+
+
+## Walks from anywhere in the outpost to a named spot, through the central corridor.
+func _go(spot: String) -> void:
+	var at := _player().global_position / OutpostLayout.SCALE
+	var route: Array = [Vector2(at.x, 212), Vector2(240, 212)]
+	route.append_array(SPOTS[spot])
+	await _walk(route)
+
+
+## Answers every panel of a learning activity (always the first option).
+func _do_activity(limit: int = 30) -> void:
+	await _wait(0.4)
+	var n := 0
+	while _panel() != null and n < limit:
+		await _choose(0)
+		await _wait(0.15)
+		n += 1
+
+
+## Does every task on today's list that isn't done yet, in order.
+func _do_day() -> void:
+	var D := MissionDirector
+	for task: Dictionary in D.today_tasks():
+		var id := StringName(str(task["id"]))
+		if D.is_task_done(id):
+			continue
+		match id:
+			&"power":
+				await _go("power")
+				await _press(&"interact")
+				await _wait(0.4)
+				await _choose(1 if _args["rover"] == 1 else 0)
+			&"greenhouse":
+				await _go("crops")
+				_alert_hour = ResourceSim.hour
+				await _press(&"interact")
+				await _wait(0.4)
+				await _choose(0)
+			&"plant", &"regolith", &"harvest":
+				await _go("tanaka")
+				await _wait(0.1)
+				_check(_target_prompt() == "Talk", "day %d: Tanaka is in reach for %s" % [D.day, id])
+				await _press(&"interact")
+				await _do_activity()
+			&"health":
+				await _go("bike")
+				_check(_target_prompt() == "Exercise bike", "the bike offers the health check")
+				await _press(&"interact")
+				await _do_activity()
+			&"light_test":
+				await _go("crops")
+				await _press(&"interact")
+				await _do_activity()
+				var grow := get_tree().current_scene.find_child("GrowExperiment", true, false)
+				_check(grow != null and D.ui_open, "the light experiment shows the trays growing")
+				await _wait(1.0)
+				await _shot("day3_experiment_growing")
+				await _press(&"interact")   # skip to day 30
+				await _wait(0.3)
+				await _shot("day3_experiment_result")
+				await _press(&"interact")   # log the results
+				await _wait(0.3)
+			&"weather":
+				await _go("log")
+				await _press(&"interact")
+				await _wait(0.4)
+				await _shot("day4_weather")
+				await _do_activity()
+			&"drill":
+				await _go("shelter")
+				await _hold(&"interact", 1.3)
+				await _wait(0.6)
+				await _walk([Vector2(240, 98)], false)
+				await _wait(0.5)
+				await _talk_through()
+		_check(D.is_task_done(id), "day %d: %s done" % [D.day, id])
+
+
 ## Evening of an outpost day: log at the comms desk, then sleep in a bunk.
 func _end_day(next_day: int) -> void:
 	var D := MissionDirector
-	await _walk([Vector2(378, 212), Vector2(240, 212), Vector2(222, 188)])
+	_check(D.can_write_log(), "day %d: every task done, the log opens up" % D.day)
+	await _go("log")
 	_check(_target_prompt() == "Evening log", "day %d: the comms desk offers the log" % (next_day - 1))
 	await _press(&"interact")
 	await _wait(0.4)
 	await _choose(0)
 	_check(D.log_written and D.can_sleep(), "day %d: log saved, bunk unlocked" % (next_day - 1))
-	await _walk([Vector2(240, 212), Vector2(290, 212), Vector2(338, 214)])
+	await _go("bunk")
 	_check(_target_prompt() == "Sleep", "day %d: the bunk offers sleep" % (next_day - 1))
 	var hour_before := ResourceSim.hour
 	await _press(&"interact")
@@ -180,22 +269,6 @@ func _end_day(next_day: int) -> void:
 		_d5 = {"hour": ResourceSim.hour, "battery": ResourceSim.battery, "exposure": ResourceSim.exposure_log}
 	await _shot("day%d_morning" % next_day)
 	await _talk_through()
-
-
-## The morning routine: power check, then greenhouse check.
-func _routine_checks() -> void:
-	var D := MissionDirector
-	await _walk([Vector2(290, 212), Vector2(240, 212), Vector2(150, 212), Vector2(138, 192)])
-	await _press(&"interact")
-	await _wait(0.4)
-	await _choose(1 if _args["rover"] == 1 else 0)
-	_check(D.power_checked, "day %d: power check done" % D.day)
-	await _walk([Vector2(150, 212), Vector2(240, 212), Vector2(290, 212), Vector2(378, 212), Vector2(378, 196)])
-	_alert_hour = ResourceSim.hour
-	await _press(&"interact")
-	await _wait(0.4)
-	await _choose(0)
-	_check(D.greenhouse_checked, "day %d: crop check done" % D.day)
 
 
 func _target_prompt() -> String:
@@ -254,6 +327,11 @@ func _run() -> void:
 	await _talk_through()
 	_check(D.stage == D.Stage.TRAINING, "briefing done -> TRAINING")
 	_check(FieldNotes.is_unlocked(&"polar_sun"), "the briefing unlocks a field note")
+	_check(_panel() != null or get_tree().current_scene.find_child("Activity_selection", true, false) != null, "the selection cards follow the briefing")
+	await _wait(0.4)
+	await _shot("02b_selection")
+	await _do_activity()
+	_check(GameState.get_flag(&"day1_selection") and FieldNotes.is_unlocked(&"selection"), "selection cards sorted, note unlocked")
 	await _press(&"interact")
 	_check(not Dialogue.is_active and not D.ui_open, "E far from everything does nothing")
 
@@ -324,6 +402,23 @@ func _run() -> void:
 	await _wait(0.3)
 	_check(not D.ui_open and get_tree().current_scene.find_child("PowerConsole", true, false) == null, "Esc closes the panel")
 	_check(_player().global_position.distance_to(Vector2(544, 144)) < 10.0, "player is back at the same position")
+
+	# Robotic arm drill, then the training quiz.
+	await _walk([Vector2(544, 238), Vector2(612, 238)])
+	_check(_target_prompt() == "Robotic arm trainer", "the robotics trainer offers the drill")
+	await _press(&"interact")
+	await _wait(0.3)
+	var drill := get_tree().current_scene.find_child("ArmDrill", true, false)
+	_check(drill != null and D.ui_open, "the arm drill opens")
+	await _shot("06b_arm_drill")
+	drill.set(&"autopilot", true)
+	t = 0.0
+	while is_instance_valid(drill) and t < 30.0:
+		await _wait(0.2)
+		t += 0.2
+	_check(not is_instance_valid(drill), "three captures finish the drill")
+	await _do_activity()
+	_check(GameState.get_flag(&"day1_arm") and D.academy_done(), "Day 1 complete: selection, arm drill, certificate")
 
 	# The things to read each unlock a field note.
 	await _walk([Vector2(544, 264), Vector2(118, 264), Vector2(118, 122)])
@@ -434,12 +529,13 @@ func _run() -> void:
 	await _wait(0.4)
 	await _choose(0)
 	_check(D.greenhouse_checked, "crop check done")
-	_check(D.day == 2 and D.stage == D.Stage.CHECKS and D.can_write_log() and not Dialogue.is_active, "day 2 tasks done: no alert yet, the log opens up")
-	await _wait(0.6)
+	_check(D.day == 2 and D.stage == D.Stage.CHECKS and not D.can_write_log() and not Dialogue.is_active, "day 2 routine checks done: no alert, the learning tasks remain")
 	_check(not D.can_sleep(), "the bunk stays locked until the log is written")
+	await _do_day()
+	await _shot("day2_done")
 	for next_day in [3, 4, 5]:
 		await _end_day(next_day)
-		await _routine_checks()
+		await _do_day()
 	_check(ResourceSim.crop_growth >= 1, "crops grew over the days (%d)" % ResourceSim.crop_growth)
 	await _wait(1.0)
 	_check(Dialogue.is_active and D.stage == D.Stage.CHECKS, "shift message shows")

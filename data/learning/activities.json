@@ -1,0 +1,150 @@
+{
+  "_about": "Interactive learning activities. Every fact here is from the sources listed in docs/CREDITS.md (section 'Five-day mission facts'). Game numbers elsewhere are simplified; these facts are real.",
+  "activities": {
+    "selection": {
+      "title": "WHO GETS TO BE AN ASTRONAUT?",
+      "kind": "sort",
+      "intro": "Commander Okafor hands you a stack of cards. Some are real NASA astronaut requirements. Some are myths. Sort them.",
+      "bins": ["Real NASA requirement", "Myth"],
+      "items": [
+        {"text": "You must be a U.S. citizen (dual citizens can apply).", "bin": 0,
+         "explain": "Real. NASA's astronaut candidate program is open to U.S. citizens, including dual citizens. Other countries select astronauts through their own agencies, like the CSA or ESA."},
+        {"text": "You need a master's degree in a STEM field, or an equivalent such as a medical degree or test pilot school.", "bin": 0,
+         "explain": "Real. Engineering, biology, physics, computer science or math all count. Two years of doctoral study, an M.D. or a test pilot school program can stand in for the master's."},
+        {"text": "You must already be a jet pilot.", "bin": 1,
+         "explain": "Myth. No previous flight experience is required. Many astronauts are scientists, doctors and engineers who learn to fly the T-38 jet during training."},
+        {"text": "You must be younger than 35.", "bin": 1,
+         "explain": "Myth. NASA has no age limit for astronaut candidates."},
+        {"text": "You must pass NASA's long-duration spaceflight physical exam.", "bin": 0,
+         "explain": "Real. Candidates must be able to pass the long-duration flight physical. Vision only needs to be correctable to 20/20, so glasses are fine."},
+        {"text": "You need years of professional work in your field after your degree (or many hours flying jets).", "bin": 0,
+         "explain": "Real. NASA asks for related professional experience after the degree, or at least 1,000 hours as pilot-in-command of jet aircraft. Teaching STEM counts too."}
+      ],
+      "outro": "Thousands apply and only about ten are picked per class. Then comes about two years of training. Rivera will show you some of it.",
+      "notes": ["selection"]
+    },
+    "training": {
+      "title": "ASTRONAUT CANDIDATE TRAINING",
+      "kind": "quiz",
+      "intro": "Astronaut candidates train for about two years before they can be assigned to a mission. Match each kind of training to what it's for.",
+      "items": [
+        {"text": "Why do candidates practice spacewalks underwater in the Neutral Buoyancy Laboratory?",
+         "options": ["Floating in water feels a lot like weightlessness", "Spacesuits need to be washed", "To learn to swim to the Moon"], "answer": 0,
+         "explain": "Weighted to float in place, a suited astronaut moves much like in microgravity. NASA's pool holds 6.2 million gallons and a full-size model of the space station."},
+        {"text": "Why does every candidate fly the T-38 supersonic jet, even non-pilots?",
+         "options": ["To get to work faster", "To practice fast decisions in a demanding, unforgiving environment", "Because the rocket is shaped like a T-38"], "answer": 1,
+         "explain": "Flying a jet trains teamwork and quick decisions under pressure, skills that carry over to spaceflight."},
+        {"text": "What is survival training for?",
+         "options": ["Living on the Moon forever", "Staying safe if a capsule lands somewhere remote, on land or water", "Winning camping contests"], "answer": 1,
+         "explain": "Candidates train in land and water survival in case a spacecraft comes down far from the recovery teams. It also builds trust inside the crew."},
+        {"text": "Why do Artemis-era candidates study geology in the field?",
+         "options": ["To pick the most useful rock samples on the Moon", "To build stone houses", "To find gold"], "answer": 0,
+         "explain": "Moonwalkers act as field geologists. Choosing the right samples helps scientists on Earth learn how the Moon formed and where water ice is."}
+      ],
+      "outro": "Robotics is on the list too: candidates learn to fly the station's Canadarm2 robotic arm, which you just practiced.",
+      "notes": ["training"]
+    },
+    "health": {
+      "title": "CREW HEALTH CHECK",
+      "kind": "predict",
+      "intro": "Rivera points at the exercise bike. 'Before you ride, predict what low gravity does to a body.'",
+      "items": [
+        {"text": "In weightlessness, without exercise, about how much bone density can a weight-bearing bone lose each MONTH?",
+         "options": ["Almost none", "About 1 percent", "About half"], "answer": 1,
+         "explain": "Around 1 to 1.5 percent per month. Bones reshape themselves when gravity stops loading them, a bit like osteoporosis on Earth."},
+        {"text": "How much exercise do space station crews do to fight this?",
+         "options": ["About 10 minutes a week", "About 2 hours a day", "None, they rest"], "answer": 1,
+         "explain": "About two hours a day on a treadmill, a bike and a weightlifting machine called ARED. Even then some bone is lost."},
+        {"text": "The Moon has one-sixth of Earth's gravity. Will the crew still need daily exercise here?",
+         "options": ["Yes, one-sixth of Earth's gravity loads the body much less", "No, any gravity is enough"], "answer": 0,
+         "explain": "Scientists still don't know exactly how much partial gravity protects bones and muscles, so lunar crews plan to keep exercising. That's why this bike is here."}
+      ],
+      "outro": "Health check logged. Keep riding: strong legs make the walk to the shelter faster.",
+      "notes": ["bones"]
+    },
+    "plant": {
+      "title": "PLANT THE GREENHOUSE",
+      "kind": "quiz",
+      "intro": "Dr. Tanaka hands you a tray of seed pillows. 'Our garden is modelled on NASA's Veggie growth unit. Let's set it up.'",
+      "items": [
+        {"text": "There's no garden soil on the Moon. What holds the seeds and roots?",
+         "options": ["Plant pillows: small bags of growing material, fertilizer and seeds", "Raw moon dust", "Nothing, the roots float"], "answer": 0,
+         "explain": "Veggie uses rooting 'pillows'. They hold the seeds, a clay-based growing material and slow-release fertilizer."},
+        {"text": "How do the pillows get water without it floating off or flooding the roots?",
+         "options": ["A sprinkler sprays them", "Water wicks up into the pillows from a reservoir", "The crew pours a cup on top"], "answer": 1,
+         "explain": "A wick draws water slowly from a reservoir into the pillows, so the roots get water and air."},
+        {"text": "Which crop did NASA astronauts first grow and eat on the space station?",
+         "options": ["Potatoes", "'Outredgeous' red romaine lettuce", "Strawberries"], "answer": 1,
+         "explain": "It was picked because it's easy to grow, nutritious and tasty. Our first beds are red romaine too."}
+      ],
+      "outro": "Seeds planted. Tomorrow we test which light recipe grows them best.",
+      "notes": ["veggie"]
+    },
+    "light_test": {
+      "title": "LIGHT-RECIPE EXPERIMENT",
+      "kind": "predict",
+      "intro": "Three test trays, three LED light recipes, same seeds. Make a prediction, then watch 30 days of growth in 10 seconds.",
+      "items": [
+        {"text": "Which tray will grow the LEAST?",
+         "options": ["Green light only", "Red + blue", "Red + blue + a little green"], "answer": 0,
+         "explain": "Leaves look green because they reflect most green light, so green alone feeds a plant poorly. Red and blue are the colors plants use most."},
+        {"text": "Veggie uses red, blue AND some green LEDs. Why add the green?",
+         "options": ["Green makes plants grow twice as fast", "So the plants look normal and the crew can spot sick leaves", "To keep the plants warm"], "answer": 1,
+         "explain": "Under only red and blue, plants look purple-pink. A little green makes them look like food again, so the crew can check their health by eye."}
+      ],
+      "outro": "Result logged to science: red + blue does the growing; green helps people see. Our model numbers are simplified, but the idea is the real one NASA used.",
+      "notes": ["light_recipe"]
+    },
+    "regolith": {
+      "title": "SOIL OR REGOLITH?",
+      "kind": "sort",
+      "intro": "Tanaka slides two jars across the bench: Earth garden soil and lunar regolith. Sort each fact to the right jar.",
+      "bins": ["Earth garden soil", "Lunar regolith"],
+      "items": [
+        {"text": "Full of rotting leaves, worms and microbes that feed plants.", "bin": 0,
+         "explain": "Living soil is rich in organic matter. The Moon has none of that."},
+        {"text": "Sharp, glassy grains made by billions of years of meteorite impacts.", "bin": 1,
+         "explain": "Regolith is crushed rock and glass. It's jagged, clings to everything and has no organic matter."},
+        {"text": "In a 2022 study, seeds sprouted in samples of it, but the plants grew small and stressed.", "bin": 1,
+         "explain": "University of Florida scientists grew small mustard-family plants in Apollo samples. Everything sprouted, but roots and leaves grew stunted."},
+        {"text": "Holds water and air in tiny spaces that roots can use.", "bin": 0,
+         "explain": "Good soil is crumbly. That's why lunar farms will probably use pillows, hydroponics, or regolith treated with fertilizer and microbes."}
+      ],
+      "outro": "That's why our greenhouse grows in pillows and water, not raw Moon dust. Regolith is still useful: piled on a roof, it makes great radiation shielding.",
+      "notes": ["regolith"]
+    },
+    "harvest": {
+      "title": "FIRST HARVEST",
+      "kind": "quiz",
+      "intro": "The first leaves are ready. Tanaka cleans them with a food-safe wipe. Before you taste, a little history.",
+      "items": [
+        {"text": "When did NASA astronauts first eat lettuce they grew in space?",
+         "options": ["1969, on Apollo 11", "August 10, 2015, on the space station", "They never have"], "answer": 1,
+         "explain": "Scott Kelly, Kjell Lindgren and Kimiya Yui tasted 'Outredgeous' red romaine from Veggie. Kelly said it tasted kind of like arugula."},
+        {"text": "Besides vitamins, why does fresh food matter on a long mission?",
+         "options": ["It doesn't", "Caring for plants and eating fresh food can lift the crew's mood", "It weighs more"], "answer": 1,
+         "explain": "Fresh food adds nutrients that fade in stored meals, and having something green to look after helps people far from home."}
+      ],
+      "outro": "Crunchy. Science points logged. The crops will keep growing if the grow lights stay on.",
+      "notes": []
+    },
+    "weather": {
+      "title": "SPACE WEATHER WATCH",
+      "kind": "sort",
+      "intro": "The comms desk shows a DONKI-style feed: NASA's database of solar flares, eruptions and particle storms seen near Earth. Sort each event.",
+      "bins": ["Can warn of a particle storm", "Not a warning sign"],
+      "items": [
+        {"text": "A big solar flare flashes near the middle of the Sun.", "bin": 0,
+         "explain": "Big flares often come with eruptions that can launch fast particles our way."},
+        {"text": "A fast coronal mass ejection (CME) is racing away from the Sun.", "bin": 0,
+         "explain": "A fast CME drives a shock wave that can speed particles up to nearly the speed of light. Forecasters watch these closely."},
+        {"text": "The outpost moves into the shadow of a ridge.", "bin": 1,
+         "explain": "Shadow drains the battery, but it has nothing to do with solar particles."},
+        {"text": "It's a full moon as seen from Earth.", "bin": 1,
+         "explain": "Moon phases are just sunlight and geometry. They don't affect radiation."}
+      ],
+      "outro": "Tomorrow we drill the shelter. When the alarm goes, you'll know exactly where to run.",
+      "notes": ["donki"]
+    }
+  }
+}

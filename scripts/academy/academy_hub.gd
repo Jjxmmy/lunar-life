@@ -52,6 +52,12 @@ func _ready() -> void:
 		record,
 		"Your radiation alert replays this real record. How the outpost copes is our simulation."]),
 		[&"donki", &"may2024"])
+	var arm := Station.new()
+	arm.position = AcademyLayout.ARM_SPOT
+	arm.prompt = "Robotic arm trainer"
+	arm.objective_id = &"arm"
+	arm.used.connect(_on_arm_used)
+	add_child(arm)
 	_add_landmark(AcademyLayout.PLANT_SPOT, "Inspect plant bench", "Plant bench", &"plants", PackedStringArray([
 		"Lettuce, tomatoes, wheat and herbs under grow lights.",
 		"The lights cost power. In conservation mode the plants stop growing but stay healthy."]),
@@ -95,7 +101,7 @@ func _ready() -> void:
 
 
 func _refresh_hatch() -> void:
-	_hatch.prompt = "Board the lander" if MissionDirector.can_graduate() else "Lander dock (locked)"
+	_hatch.prompt = "Board the lander" if MissionDirector.academy_done() else "Lander dock (locked)"
 
 
 func _add_navigation(player: Node2D) -> void:
@@ -111,6 +117,7 @@ func _add_navigation(player: Node2D) -> void:
 	nav.add_point("weather", "Space-weather desk", "Weather", "See the NASA record behind the alert.", "station", AcademyLayout.DESK_SPOT)
 	nav.add_point("rivera", "Engineer Rivera", "Rivera", "Speak to Rivera to start training.", "crew", AcademyLayout.ENGINEER_SPOT)
 	nav.add_point("botanist", "Dr. Tanaka", "Tanaka", "Ask the botanist about the greenhouse.", "crew", AcademyLayout.BOTANIST_SPOT)
+	nav.add_point("arm", "Robotics trainer", "Arm", "Practice capturing cargo with a robotic arm.", "station", AcademyLayout.ARM_SPOT)
 	nav.add_point("plants", "Plant bench", "Plants", "Learn how grow lights use power.", "station", AcademyLayout.PLANT_SPOT)
 	nav.add_point("exit", "Lander dock", "Lander", "Earn your certificate to unlock departure.", "hatch", AcademyLayout.HATCH_SPOT + Vector2(0, 10))
 	add_child(nav)
@@ -170,8 +177,26 @@ func _on_cinematic_finished() -> void:
 func _on_dialogue_ended(id: StringName) -> void:
 	if id == &"commander":
 		MissionDirector.finish_briefing()
+		if not GameState.get_flag(&"day1_selection"):
+			_start_activity.call_deferred(&"selection", &"day1_selection")
 	elif id == &"engineer" and not GameState.get_flag(&"outpost_visited"):
 		_open_training()
+
+
+func _start_activity(id: StringName, flag: StringName) -> void:
+	var act := LearningActivity.start(self, id)
+	act.finished.connect(func(_c: int, _t: int) -> void:
+		GameState.set_flag(flag)
+		_refresh_hatch())
+
+
+func _on_arm_used() -> void:
+	if GameState.get_flag(&"day1_arm"):
+		Dialogue.play(&"arm_done", "Robotics trainer", PackedStringArray(["Drill complete. Real crews practice for months before flying Canadarm2."]))
+		return
+	var drill := ArmDrill.open(self)
+	drill.name = "ArmDrill"
+	drill.finished.connect(func() -> void: _start_activity.call_deferred(&"training", &"day1_arm"))
 
 
 func _open_training() -> void:
@@ -205,13 +230,13 @@ func _show_story_moment(moment_id: int) -> void:
 
 
 func _on_hatch_used() -> void:
-	if MissionDirector.can_graduate():
+	if MissionDirector.academy_done():
 		if not GameState.get_flag(&"outpost_visited"):
 			MissionDirector.begin_mission()
 		SceneRouter.go_to(&"outpost")
 	else:
 		Dialogue.play(&"hatch_locked", "Lander dock", PackedStringArray([
-			"LOCKED. Earn your Power Console certificate with Engineer Rivera first."]))
+			"LOCKED. Finish Day 1 first: the selection cards, the robotic arm drill and Rivera's Power Console certificate."]))
 
 
 func _process(delta: float) -> void:

@@ -66,6 +66,7 @@ func _ready() -> void:
 	_add_station(OutpostLayout.RETURN_SPOT, "Return to academy", _on_return_used, &"return")
 	_add_station(OutpostLayout.LOG_SPOT, "Evening log", _on_log_used, &"log")
 	_add_station(OutpostLayout.BUNK_SPOT, "Sleep", _on_bunk_used, &"bunk")
+	_add_station(OutpostLayout.BIKE_SPOT, "Exercise bike", _on_bike_used, &"bike")
 
 	var actors := Node2D.new()
 	actors.name = "Actors"
@@ -138,6 +139,7 @@ func _add_navigation(player: Node2D) -> void:
 	nav.add_point("return", "Academy transit pad", "Transit", "Return to the academy before the alert.", "hatch", OutpostLayout.px(OutpostLayout.RETURN_SPOT))
 	nav.add_point("power", "West power room", "Power", "Check battery reserves and rover charging.", "station", OutpostLayout.px(OutpostLayout.POWER_SPOT))
 	nav.add_point("crops", "East greenhouse", "Crops", "Set the grow-light power plan.", "station", OutpostLayout.px(OutpostLayout.GREEN_SPOT))
+	nav.add_point("bike", "Exercise bike", "Bike", "Daily exercise keeps bones and muscles strong.", "station", OutpostLayout.px(OutpostLayout.BIKE_SPOT))
 	nav.add_point("log", "Comms desk", "Log", "Write the evening log.", "station", OutpostLayout.px(OutpostLayout.LOG_SPOT))
 	nav.add_point("bunk", "Crew bunks", "Bunk", "Sleep to start the next day.", "station", OutpostLayout.px(OutpostLayout.BUNK_SPOT))
 	nav.add_point("shelter", "Storm shelter hatch", "Shelter", "Hold E to open the hatch, then step inside.", "hatch", OutpostLayout.px(OutpostLayout.HATCH_SPOT + Vector2(0, 16)))
@@ -191,6 +193,9 @@ func _route(points: Array) -> PackedVector2Array:
 
 
 func _on_tanaka_used() -> void:
+	for task_id: StringName in [&"plant", &"regolith", &"harvest"]:
+		if _offer_activity(task_id):
+			return
 	var line := "Phew. Thick walls and a good plan. Nice work, {name}."
 	if MissionDirector.stage == MissionDirector.Stage.CHECKS:
 		line = "The lettuce loves these lamps, {name}. The lamp control is under the water tank."
@@ -275,6 +280,12 @@ func _on_hatch_opened() -> void:
 ## Stepping into the shelter during the alert is the whole interaction: the hatch seals
 ## behind the crew and the power decision opens by itself.
 func _update_shelter() -> void:
+	if _wants(&"drill") and not MissionDirector.ui_open and not Dialogue.is_active \
+			and _shelter_px.grow_individual(0, 0, 0, -3).has_point(_player.position):
+		_complete(&"drill")
+		Dialogue.play(&"drill", "Engineer Rivera", PackedStringArray([
+			"Drill done, {name}. From the alarm to inside: that's the route. When it's real, don't stop for anything."]))
+		return
 	if _sheltering or MissionDirector.stage != MissionDirector.Stage.ALERT:
 		return
 	if MissionDirector.ui_open or Dialogue.is_active:
@@ -368,6 +379,9 @@ func _on_power_choice(index: int) -> void:
 func _on_green_used() -> void:
 	var body := "Crop health: %d of 100.\n" % int(ResourceSim.crop_health)
 	FieldNotes.unlock(&"veggie")
+	if MissionDirector.greenhouse_checked and _wants(&"light_test"):
+		_run_light_test()
+		return
 	if MissionDirector.stage == MissionDirector.Stage.CHECKS and not MissionDirector.greenhouse_checked:
 		body += "Grow lights use 3 power. Conservation mode dims them to 1.5 power: the crops stop growing but stay healthy.\n\nChoose the plan:"
 		var panel := ChoicePanel.open(self, "GREENHOUSE", body, PackedStringArray([
@@ -396,10 +410,56 @@ func _after_check() -> void:
 		_hud.call(&"flash", "TASKS DONE  -  WRITE THE LOG", UiKit.AMBER)
 
 
+# ---------------------------------------------------------------- learning tasks
+
+## True if today's task list has this task and it isn't done yet.
+func _wants(task_id: StringName) -> bool:
+	return MissionDirector.stage == MissionDirector.Stage.CHECKS and MissionDirector.has_task_today(task_id) and not MissionDirector.is_task_done(task_id)
+
+
+## Starts the activity with the same id as the task. Finishing it completes the task.
+func _offer_activity(task_id: StringName) -> bool:
+	if not _wants(task_id):
+		return false
+	var act := LearningActivity.start(self, task_id)
+	act.finished.connect(func(correct: int, _total: int) -> void:
+		ResourceSim.science_progress += correct
+		_complete(task_id))
+	return true
+
+
+func _complete(task_id: StringName) -> void:
+	if MissionDirector.complete_task(task_id):
+		var title := task_id
+		for task: Dictionary in MissionDirector.today_tasks():
+			if StringName(str(task["id"])) == task_id:
+				title = str(task["title"]).to_upper()
+		_hud.call(&"flash", "%s DONE" % title, UiKit.GREEN)
+		_after_check()
+
+
+func _on_bike_used() -> void:
+	if not _offer_activity(&"health"):
+		Dialogue.play(&"bike", "Exercise bike", PackedStringArray(["Twenty minutes of pedalling. Your legs thank you, {name}."]))
+
+
+func _run_light_test() -> void:
+	var act := LearningActivity.start(self, &"light_test")
+	# Predict first, then watch the trays grow, then the explanation panels.
+	act.set_meta(&"pending", true)
+	act.finished.connect(func(correct: int, _total: int) -> void:
+		ResourceSim.science_progress += correct + 2
+		var exp_layer := GrowExperiment.open(self)
+		exp_layer.name = "GrowExperiment"
+		exp_layer.finished.connect(func() -> void: _complete(&"light_test")))
+
+
 # ---------------------------------------------------------------- end of the day
 
 func _on_log_used() -> void:
 	var d := MissionDirector
+	if _offer_activity(&"weather"):
+		return
 	if d.can_write_log():
 		var s := ResourceSim.get_snapshot()
 		var body := "Day %d of %d: %s\n\nBattery %d of %d cells.  Crop health %d.  Science %d.\n\nSave today's log and get some rest." % [
@@ -701,10 +761,18 @@ func _draw() -> void:
 		var bar_h := maxf(1.0, roundf(level * (rad.size.y - 4.0)))
 		draw_rect(Rect2(rad.position.x + 3 + i * 3, rad.end.y - 1 - bar_h, 2, bar_h), color)
 
+	# --- Exercise bike (until the painter adds it to the background).
+	var bike := OutpostLayout.px_rect(OutpostLayout.BIKE)
+	draw_rect(Rect2(bike.position + Vector2(2, bike.size.y - 6), Vector2(bike.size.x - 4, 3)), Color("5b6584"))
+	draw_circle(bike.position + Vector2(9, bike.size.y - 7), 5.0, Color("8a93b0"))
+	draw_rect(Rect2(bike.position + Vector2(bike.size.x - 12, 2), Vector2(3, bike.size.y - 8)), Color("8a93b0"))
+	draw_rect(Rect2(bike.position + Vector2(bike.size.x - 16, 1), Vector2(10, 3)), Color("2a2f45"))
 	# --- Station markers: a pulsing ring until the check is done, then a quiet tick.
 	_marker(OutpostLayout.px(OutpostLayout.POWER_SPOT), d.power_checked, C_TEAL)
 	_marker(OutpostLayout.px(OutpostLayout.GREEN_SPOT), d.greenhouse_checked, C_GREEN)
-	if d.can_write_log():
+	if _wants(&"health"):
+		_marker(OutpostLayout.px(OutpostLayout.BIKE_SPOT), false, C_AMBER)
+	if d.can_write_log() or _wants(&"weather"):
 		_marker(OutpostLayout.px(OutpostLayout.LOG_SPOT), false, C_TEAL)
 	if d.can_sleep():
 		_marker(OutpostLayout.px(OutpostLayout.BUNK_SPOT), false, C_AMBER)
