@@ -62,7 +62,7 @@ func _draw_status() -> void:
 	var cells := ResourceSim.battery_cells()
 	var total := ResourceSim.battery_cells_total()
 	var sun_words := "Full sun" if illum >= 0.9 else ("Low sun" if illum > 0.0 else "Shadow")
-	var hour_words := "Hour %d" % ResourceSim.hour
+	var hour_words := "Day %d  Hour %d" % [MissionDirector.day, ResourceSim.hour]
 	var sun_w := UiKit.text_width(sun_words)
 	var width := 14.0 + sun_w + 10.0 + total * 4.0 + 6.0 + 18.0 + 8.0 + UiKit.text_width(hour_words) + 6.0
 	var box := Rect2(6, 251, width, 14)

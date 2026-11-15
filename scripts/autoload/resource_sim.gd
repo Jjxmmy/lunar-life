@@ -55,6 +55,8 @@ var last_demand: float = 0.0
 # --- Life support, food, science ---
 var life_support: Dictionary = {"oxygen": 100.0, "water": 100.0, "co2_scrub": 100.0}
 var crop_health: float = 80.0
+## Days of healthy growth so far (0 = seedlings). Drawn as taller plants in the greenhouse.
+var crop_growth: int = 0
 var science_points: int = 0
 
 # --- Radiation (game units; never present these as real doses) ---
@@ -136,6 +138,7 @@ func reset_state(start_hour: int, start_battery: float, pattern: Array[float] = 
 	greenhouse_conservation = false
 	life_support = {"oxygen": 100.0, "water": 100.0, "co2_scrub": 100.0}
 	crop_health = 70.0
+	crop_growth = 0
 	science_points = 0
 	science_progress = 0.0
 	exposure_log = 0.0
@@ -147,6 +150,44 @@ func reset_state(start_hour: int, start_battery: float, pattern: Array[float] = 
 	life_support_ok_hours = 0
 	emergency_shutoffs = 0
 	history.clear()
+	_accum = 0.0
+	last_generation = solar_capacity * illumination_at(hour)
+	last_demand = current_demand()
+	_emit_changed()
+
+
+## Everything that changes during a mission, so a day can be replayed exactly.
+func save_state() -> Dictionary:
+	return {
+		"hour": hour, "battery": battery, "enabled": enabled.duplicate(),
+		"greenhouse_conservation": greenhouse_conservation, "life_support": life_support.duplicate(),
+		"crop_health": crop_health, "crop_growth": crop_growth, "science_progress": science_progress,
+		"exposure_log": exposure_log, "safety_incidents": safety_incidents, "battery_min": battery_min,
+		"hours_run": hours_run, "life_support_ok_hours": life_support_ok_hours,
+		"emergency_shutoffs": emergency_shutoffs, "history": history.duplicate(true),
+	}
+
+
+func load_state(state: Dictionary) -> void:
+	hour = state["hour"]
+	battery = state["battery"]
+	enabled = (state["enabled"] as Dictionary).duplicate()
+	greenhouse_conservation = state["greenhouse_conservation"]
+	life_support = (state["life_support"] as Dictionary).duplicate()
+	crop_health = state["crop_health"]
+	crop_growth = state["crop_growth"]
+	science_progress = state["science_progress"]
+	science_points = int(science_progress)
+	exposure_log = state["exposure_log"]
+	safety_incidents = state["safety_incidents"]
+	battery_min = state["battery_min"]
+	hours_run = state["hours_run"]
+	life_support_ok_hours = state["life_support_ok_hours"]
+	emergency_shutoffs = state["emergency_shutoffs"]
+	history.assign((state["history"] as Array).duplicate(true))
+	sep_active = false
+	crew_sheltered = false
+	illumination_override = []
 	_accum = 0.0
 	last_generation = solar_capacity * illumination_at(hour)
 	last_demand = current_demand()

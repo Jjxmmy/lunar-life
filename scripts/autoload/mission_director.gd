@@ -3,13 +3,21 @@ extends Node
 ##
 ##   BRIEFING -> TRAINING -> GRADUATED -> CHECKS -> ALERT -> SHELTERED -> DEBRIEF
 ##
+## FIVE-DAY MISSION: Day 1 is the academy (BRIEFING..GRADUATED). Days 2-5 are spent in
+## the CHECKS stage at the outpost: each day's tasks come from data/mission/days.json.
+## On days 2-4 the player finishes the tasks, writes the evening log, then sleeps in a
+## bunk (sleep() moves to the next morning). On day 5 finishing the tasks starts the alert.
+##
 ## Each stage only changes from a valid event (see the functions below), so rapid
 ## key presses can't skip a stage or finish a task twice.
 ##
 ## TIMING MODEL (kept in one place on purpose):
 ##   - Training: the clock runs only while the training panel is open and "Go" is pressed.
-##   - Outpost routine checks: the clock is stopped. When both checks are done,
-##     a fixed shift (shift_hours_before_alert) is simulated in one go.
+##   - Outpost routine days: the clock is stopped while you work. Sleeping simulates
+##     the rest of the day and the night in one go (night_hours). Battery, crops and
+##     science carry over from day to day.
+##   - Day 5: when its tasks are done a fixed shift (shift_hours_before_alert) is
+##     simulated in one go, then the alert starts.
 ##   - Alert: one game hour passes every seconds_per_storm_hour of real time, but
 ##     ONLY while the player is in control (not while a dialogue or panel is open).
 ##   - Sheltered: the rest of the storm is played out quickly, then the debrief opens.
@@ -19,9 +27,12 @@ enum Stage { BRIEFING, TRAINING, GRADUATED, CHECKS, ALERT, SHELTERED, DEBRIEF }
 signal stage_changed(stage: int)
 signal objectives_changed
 signal storm_hour_passed(hours_done: int, hours_total: int)
+signal day_started(day: int)
 
 const SEP_CACHE_PATH := "res://data/nasa/donki_sep_cached.json"
 const CONFIG_PATH := "res://data/nasa/sep_replay_config.json"
+const DAYS_PATH := "res://data/mission/days.json"
+const FINAL_DAY := 5
 
 ## Scripted sunlight for the academy training (FICTIONAL training scenario).
 const TRAINING_PATTERN: Array[float] = [1.0, 1.0, 0.5, 0.2, 0.0, 0.2, 0.5, 1.0, 1.0, 1.0]
@@ -29,8 +40,22 @@ const TRAINING_HOURS := 10
 const TRAINING_START_BATTERY := 24.0
 
 var stage: Stage = Stage.BRIEFING
-var power_checked: bool = false
-var greenhouse_checked: bool = false
+## Mission day, 1-5. Day 1 is the academy.
+var day: int = 1
+## Task id -> true for the tasks finished today.
+var tasks_done: Dictionary = {}
+var log_written: bool = false
+## Day plans read from DAYS_PATH (index 0 = day 1).
+var days: Array = []
+## Simulation state at the start of day 5, so "Try again" replays only the storm day.
+var _day5_state: Dictionary = {}
+
+var power_checked: bool:
+	get:
+		return is_task_done(&"power")
+var greenhouse_checked: bool:
+	get:
+		return is_task_done(&"greenhouse")
 var hours_unsheltered: int = 0
 var storm_hours_done: int = 0
 var reached_shelter: bool = false
@@ -48,6 +73,7 @@ var config: Dictionary = {
 	"storm_hours": 8,
 	"seconds_per_storm_hour": 4.0,
 	"shelter_readiness": 90.0,
+	"night_hours": 12,
 }
 
 ## True while a station panel is open. Panels call push_ui() / pop_ui().
@@ -82,6 +108,8 @@ func pop_ui() -> void:
 
 func start_new_game() -> void:
 	_ui_count = 0
+	day = 1
+	_day5_state = {}
 	_set_stage(Stage.BRIEFING)
 
 
@@ -117,8 +145,10 @@ func can_graduate() -> bool:
 ## Starts (or restarts) the outpost mission. Keeps the astronaut profile;
 ## resets every mission and simulation value.
 func begin_mission() -> void:
-	power_checked = false
-	greenhouse_checked = false
+	day = 2
+	tasks_done = {}
+	log_written = false
+	_day5_state = {}
 	hours_unsheltered = 0
 	storm_hours_done = 0
 	reached_shelter = false
@@ -130,26 +160,115 @@ func begin_mission() -> void:
 	ResourceSim.shelter_readiness = float(config["shelter_readiness"])
 	ResourceSim.reset_state(int(config["mission_start_hour"]), float(config["mission_start_battery"]))
 	_set_stage(Stage.CHECKS)
+	day_started.emit(day)
 	objectives_changed.emit()
+
+
+## "Try again" after the storm: back to the morning of day 5 with the days before kept.
+func retry_storm() -> void:
+	if _day5_state.is_empty():
+		begin_mission()
+		return
+	day = FINAL_DAY
+	tasks_done = {}
+	log_written = false
+	hours_unsheltered = 0
+	storm_hours_done = 0
+	reached_shelter = false
+	shelter_choice = -1
+	_ui_count = 0
+	ResourceSim.paused = true
+	ResourceSim.load_state(_day5_state)
+	_set_stage(Stage.CHECKS)
+	day_started.emit(day)
+	objectives_changed.emit()
+
+
+## Today's plan: {"title": ..., "tasks": [{"id", "title", "description", "destination"}]}.
+func day_plan(which: int = -1) -> Dictionary:
+	var index := (day if which < 0 else which) - 1
+	if index >= 0 and index < days.size() and days[index] is Dictionary:
+		return days[index]
+	return {}
+
+
+func today_tasks() -> Array:
+	return day_plan().get("tasks", [])
+
+
+func is_task_done(task_id: StringName) -> bool:
+	return tasks_done.get(task_id, false)
+
+
+func has_task_today(task_id: StringName) -> bool:
+	for task: Dictionary in today_tasks():
+		if StringName(str(task.get("id", ""))) == task_id:
+			return true
+	return false
+
+
+## Marks one of today's tasks done. Ignores tasks that aren't on today's list or are done.
+func complete_task(task_id: StringName) -> bool:
+	if stage != Stage.CHECKS or not has_task_today(task_id) or is_task_done(task_id):
+		return false
+	tasks_done[task_id] = true
+	objectives_changed.emit()
+	return true
 
 
 func complete_check(check_id: StringName) -> void:
-	if stage != Stage.CHECKS:
-		return
-	if check_id == &"power":
-		power_checked = true
-	elif check_id == &"greenhouse":
-		greenhouse_checked = true
-	objectives_changed.emit()
+	complete_task(check_id)
 
 
 func checks_done() -> bool:
-	return power_checked and greenhouse_checked
+	for task: Dictionary in today_tasks():
+		if not is_task_done(StringName(str(task.get("id", "")))):
+			return false
+	return true
+
+
+func is_final_day() -> bool:
+	return day >= FINAL_DAY
+
+
+func can_write_log() -> bool:
+	return stage == Stage.CHECKS and not is_final_day() and checks_done() and not log_written
+
+
+func write_log() -> bool:
+	if not can_write_log():
+		return false
+	log_written = true
+	objectives_changed.emit()
+	return true
+
+
+func can_sleep() -> bool:
+	return stage == Stage.CHECKS and not is_final_day() and log_written
+
+
+## Ends the day: simulates the rest of it and the night, then starts the next morning.
+func sleep() -> bool:
+	if not can_sleep():
+		return false
+	var grow := ResourceSim.is_powered(&"greenhouse") and not ResourceSim.greenhouse_conservation
+	for i in int(config["night_hours"]):
+		ResourceSim.advance_hour()
+	if grow and ResourceSim.crop_health > 30.0:
+		ResourceSim.crop_growth += 1
+	day += 1
+	tasks_done = {}
+	log_written = false
+	if day == FINAL_DAY:
+		_day5_state = ResourceSim.save_state()
+	day_started.emit(day)
+	objectives_changed.emit()
+	return true
 
 
 ## Simulates the routine shift, then starts the solar particle alert.
 func start_alert() -> void:
-	if stage != Stage.CHECKS or not checks_done():
+	if stage != Stage.CHECKS or not is_final_day() or not checks_done():
 		return
 	for i in int(config["shift_hours_before_alert"]):
 		ResourceSim.advance_hour()
@@ -242,6 +361,11 @@ func _load_data() -> void:
 		for key: String in config.keys():
 			if (cfg as Dictionary).has(key):
 				config[key] = (cfg as Dictionary)[key]
+	var plan: Variant = _read_json(DAYS_PATH)
+	if plan is Dictionary and (plan as Dictionary).get("days") is Array:
+		days = (plan as Dictionary)["days"]
+	else:
+		push_error("MissionDirector: could not read %s" % DAYS_PATH)
 	var cache: Variant = _read_json(SEP_CACHE_PATH)
 	if cache is Dictionary and (cache as Dictionary).get("record") is Dictionary:
 		sep_record = (cache as Dictionary)["record"]

@@ -1,0 +1,22 @@
+{
+  "_about": "The five-day mission plan. Day 1 is the academy. Each outpost day lists its tasks in order; ids are what the stations report to MissionDirector.complete_task().",
+  "days": [
+    {"title": "Becoming an astronaut", "place": "Academy", "tasks": []},
+    {"title": "Arrival: power and living", "place": "Outpost", "tasks": [
+      {"id": "power", "title": "Check outpost power", "description": "Use the console in the west power room.", "destination": "power"},
+      {"id": "greenhouse", "title": "Check the greenhouse", "description": "Use the lamp control under the water tank in the east greenhouse.", "destination": "crops"}
+    ]},
+    {"title": "Space farming science", "place": "Outpost", "tasks": [
+      {"id": "power", "title": "Check outpost power", "description": "Morning routine: check the battery and the sunlight forecast.", "destination": "power"},
+      {"id": "greenhouse", "title": "Check the greenhouse", "description": "Morning routine: set the grow lights for today.", "destination": "crops"}
+    ]},
+    {"title": "Space weather watch", "place": "Outpost", "tasks": [
+      {"id": "power", "title": "Check outpost power", "description": "Morning routine: plan power for the coming shadow.", "destination": "power"},
+      {"id": "greenhouse", "title": "Check the greenhouse", "description": "Morning routine: check on the crops.", "destination": "crops"}
+    ]},
+    {"title": "The storm", "place": "Outpost", "tasks": [
+      {"id": "power", "title": "Check outpost power", "description": "Morning routine: check the battery.", "destination": "power"},
+      {"id": "greenhouse", "title": "Check the greenhouse", "description": "Morning routine: check the crops before the shift.", "destination": "crops"}
+    ]}
+  ]
+}

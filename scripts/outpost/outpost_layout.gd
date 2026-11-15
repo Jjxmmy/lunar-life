@@ -42,6 +42,9 @@ const HATCH_SPOT := Vector2(240, 124)
 const SPAWN := Vector2(240, 248)
 const RETURN_SPOT := Vector2(240, 272)
 const ROVER_SPOT := Vector2(96, 290)
+## Evening log at the comms desk (corridor, west side) and the bunk you sleep in.
+const LOG_SPOT := Vector2(216, 176)
+const BUNK_SPOT := Vector2(338, 208)
 
 # --- Crew: where they work, where they wait at the hatch, where they sit out the storm ---
 const TANAKA_HOME := Vector2(424, 210)

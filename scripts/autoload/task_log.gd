@@ -30,7 +30,10 @@ func current_objective() -> Dictionary:
 		MissionDirector.Stage.GRADUATED:
 			wanted_id = "Graduate and travel to the outpost"
 		MissionDirector.Stage.CHECKS:
-			wanted_id = "Check outpost power" if not MissionDirector.power_checked else "Check the greenhouse"
+			for task in entries():
+				if task.get("facility", "") == "Outpost" and not task.done:
+					return task
+			return {}
 		MissionDirector.Stage.ALERT:
 			wanted_id = "Respond to the space weather alert"
 	for task in entries():
@@ -59,8 +62,11 @@ func entries() -> Array[Dictionary]:
 	if d.can_graduate():
 		_add(list, "Graduate and travel to the outpost", "Take the launch hatch on the academy's north-east wall.", GameState.get_flag(&"outpost_visited"))
 	if GameState.get_flag(&"outpost_visited"):
-		_add(list, "Check outpost power", "Use the console in the west power room.", d.power_checked)
-		_add(list, "Check the greenhouse", "Use the lamp control under the water tank in the east greenhouse.", d.greenhouse_checked)
+		for task: Dictionary in d.today_tasks():
+			_add(list, str(task["title"]), str(task["description"]), d.is_task_done(StringName(str(task["id"]))), str(task.get("destination", "")))
+		if d.stage == d.Stage.CHECKS and not d.is_final_day():
+			_add(list, "Write the evening log", "Use the comms desk in the corridor to log what you learned today.", d.log_written, "log")
+			_add(list, "Sleep in your bunk", "Rest in a bunk in the crew quarters to start Day %d." % (d.day + 1), false, "bunk")
 	if d.stage >= d.Stage.ALERT:
 		var alert_help := "Run north. Hold E to crank the shelter hatch open, then step inside."
 		if d.stage == d.Stage.DEBRIEF and not d.reached_shelter:
@@ -69,7 +75,7 @@ func entries() -> Array[Dictionary]:
 	return list
 
 
-func _add(list: Array[Dictionary], title: String, description: String, done: bool) -> void:
+func _add(list: Array[Dictionary], title: String, description: String, done: bool, outpost_spot: String = "") -> void:
 	var id := title.split(" (")[0]
 	var destination: Array = {
 		"Explore the academy": ["Academy", "briefing"],
@@ -80,6 +86,8 @@ func _add(list: Array[Dictionary], title: String, description: String, done: boo
 		"Check outpost power": ["Outpost", "power"],
 		"Check the greenhouse": ["Outpost", "crops"],
 	}.get(id, [])
+	if not outpost_spot.is_empty():
+		destination = ["Outpost", outpost_spot]
 	if id == "Respond to the space weather alert" and MissionDirector.stage == MissionDirector.Stage.ALERT:
 		destination = ["Outpost", "shelter"]
 	if id == "Speak with the mentors":

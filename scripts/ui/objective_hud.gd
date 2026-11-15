@@ -4,6 +4,7 @@ extends CanvasLayer
 var navigation: NavigationFloor
 var _panel: PanelContainer
 var _label: Label
+var _header: Label
 var _icon: Control
 var _arrow: Control
 var _objective_id := ""
@@ -36,7 +37,8 @@ func _ready() -> void:
 	words.add_theme_constant_override("separation", -1)
 	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(words)
-	words.add_child(UiKit.label("OBJECTIVE", "small", UiKit.TEXT_DIM))
+	_header = UiKit.label("OBJECTIVE", "small", UiKit.TEXT_DIM)
+	words.add_child(_header)
 	_label = UiKit.label("", "small", UiKit.TEXT)
 	_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -88,6 +90,7 @@ func _refresh() -> void:
 	var previous_id := _objective_id
 	var was_tracking_previous := not previous_id.is_empty() and MapManager.tracked_task == previous_id
 	var task := TaskLog.current_objective()
+	_header.text = "DAY %d OF %d  -  OBJECTIVE" % [MissionDirector.day, MissionDirector.FINAL_DAY]
 	var next_id := str(task.get("id", ""))
 	var next_title := str(task.get("title", ""))
 	if next_id != _objective_id:

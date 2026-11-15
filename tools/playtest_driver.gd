@@ -156,6 +156,48 @@ func _choose(index: int) -> void:
 	await _wait(0.2)
 
 
+var _alert_hour := 0
+var _d5 := {}
+
+
+## Evening of an outpost day: log at the comms desk, then sleep in a bunk.
+func _end_day(next_day: int) -> void:
+	var D := MissionDirector
+	await _walk([Vector2(378, 212), Vector2(240, 212), Vector2(222, 188)])
+	_check(_target_prompt() == "Evening log", "day %d: the comms desk offers the log" % (next_day - 1))
+	await _press(&"interact")
+	await _wait(0.4)
+	await _choose(0)
+	_check(D.log_written and D.can_sleep(), "day %d: log saved, bunk unlocked" % (next_day - 1))
+	await _walk([Vector2(240, 212), Vector2(290, 212), Vector2(338, 214)])
+	_check(_target_prompt() == "Sleep", "day %d: the bunk offers sleep" % (next_day - 1))
+	var hour_before := ResourceSim.hour
+	await _press(&"interact")
+	await _wait(2.4)
+	_check(D.day == next_day and not D.power_checked and not D.log_written, "slept into day %d with a fresh task list" % next_day)
+	_check(ResourceSim.hour == hour_before + int(D.config["night_hours"]), "the night is simulated (%d hours)" % int(D.config["night_hours"]))
+	if next_day == D.FINAL_DAY:
+		_d5 = {"hour": ResourceSim.hour, "battery": ResourceSim.battery, "exposure": ResourceSim.exposure_log}
+	await _shot("day%d_morning" % next_day)
+	await _talk_through()
+
+
+## The morning routine: power check, then greenhouse check.
+func _routine_checks() -> void:
+	var D := MissionDirector
+	await _walk([Vector2(290, 212), Vector2(240, 212), Vector2(150, 212), Vector2(138, 192)])
+	await _press(&"interact")
+	await _wait(0.4)
+	await _choose(1 if _args["rover"] == 1 else 0)
+	_check(D.power_checked, "day %d: power check done" % D.day)
+	await _walk([Vector2(150, 212), Vector2(240, 212), Vector2(290, 212), Vector2(378, 212), Vector2(378, 196)])
+	_alert_hour = ResourceSim.hour
+	await _press(&"interact")
+	await _wait(0.4)
+	await _choose(0)
+	_check(D.greenhouse_checked, "day %d: crop check done" % D.day)
+
+
 func _target_prompt() -> String:
 	var target := _player().get(&"_target") as Node2D
 	return target.call(&"prompt_text") if is_instance_valid(target) else ""
@@ -392,6 +434,13 @@ func _run() -> void:
 	await _wait(0.4)
 	await _choose(0)
 	_check(D.greenhouse_checked, "crop check done")
+	_check(D.day == 2 and D.stage == D.Stage.CHECKS and D.can_write_log() and not Dialogue.is_active, "day 2 tasks done: no alert yet, the log opens up")
+	await _wait(0.6)
+	_check(not D.can_sleep(), "the bunk stays locked until the log is written")
+	for next_day in [3, 4, 5]:
+		await _end_day(next_day)
+		await _routine_checks()
+	_check(ResourceSim.crop_growth >= 1, "crops grew over the days (%d)" % ResourceSim.crop_growth)
 	await _wait(1.0)
 	_check(Dialogue.is_active and D.stage == D.Stage.CHECKS, "shift message shows")
 	if Dialogue.is_revealing():
@@ -399,7 +448,7 @@ func _run() -> void:
 	await _press(&"interact")
 	await _wait(0.3)
 	_check(D.stage == D.Stage.ALERT and Dialogue.is_active, "alert started, Mission Control speaks")
-	_check(ResourceSim.hour == 10 and ResourceSim.sep_active, "alert begins at hour 10 with the SEP active (hour %d)" % ResourceSim.hour)
+	_check(D.day == D.FINAL_DAY and ResourceSim.hour == _alert_hour + int(D.config["shift_hours_before_alert"]) and ResourceSim.sep_active, "day 5: alert begins after the shift with the SEP active (hour %d)" % ResourceSim.hour)
 	await _shot("10_alert_dialogue")
 	var hours_before := D.storm_hours_done
 	await _wait(3.0)
@@ -456,7 +505,7 @@ func _run() -> void:
 	await _press(&"ui_cancel")
 	_check(not get_tree().paused, "Escape resumes the mission")
 	D.start_alert()
-	_check(D.stage == D.Stage.ALERT and ResourceSim.hour <= 11, "a second start_alert does nothing")
+	_check(D.stage == D.Stage.ALERT and ResourceSim.hour <= _alert_hour + int(D.config["shift_hours_before_alert"]) + 1, "a second start_alert does nothing")
 	await _wait(0.5)
 	await _shot("11_alert_route")
 	if _args["late"] > 0:
@@ -519,7 +568,7 @@ func _run() -> void:
 	_check(_click(report, "Try again"), "Try again restarts the mission")
 	await _wait(1.6)
 	_check(D.stage == D.Stage.CHECKS and not D.power_checked and D.storm_hours_done == 0, "retry resets the mission")
-	_check(ResourceSim.hour == 4 and ResourceSim.battery == 20.0 and ResourceSim.exposure_log == 0.0 and not ResourceSim.sep_active, "retry resets the simulation")
+	_check(D.day == D.FINAL_DAY and ResourceSim.hour == _d5["hour"] and is_equal_approx(ResourceSim.battery, _d5["battery"]) and is_equal_approx(ResourceSim.exposure_log, _d5["exposure"]) and not ResourceSim.sep_active, "retry restarts from the morning of day 5")
 	_check(GameState.player_name == "Tester" and D.can_graduate(), "retry keeps the astronaut profile")
 	_check(not D.ui_open and _player() != null, "player is in control again")
 	await _shot("15_after_retry")

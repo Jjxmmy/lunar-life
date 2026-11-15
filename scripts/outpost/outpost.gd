@@ -64,6 +64,8 @@ func _ready() -> void:
 	_add_station(OutpostLayout.POWER_SPOT, "Check power", _on_power_used, &"power")
 	_add_station(OutpostLayout.GREEN_SPOT, "Check crops", _on_green_used, &"crops")
 	_add_station(OutpostLayout.RETURN_SPOT, "Return to academy", _on_return_used, &"return")
+	_add_station(OutpostLayout.LOG_SPOT, "Evening log", _on_log_used, &"log")
+	_add_station(OutpostLayout.BUNK_SPOT, "Sleep", _on_bunk_used, &"bunk")
 
 	var actors := Node2D.new()
 	actors.name = "Actors"
@@ -136,6 +138,8 @@ func _add_navigation(player: Node2D) -> void:
 	nav.add_point("return", "Academy transit pad", "Transit", "Return to the academy before the alert.", "hatch", OutpostLayout.px(OutpostLayout.RETURN_SPOT))
 	nav.add_point("power", "West power room", "Power", "Check battery reserves and rover charging.", "station", OutpostLayout.px(OutpostLayout.POWER_SPOT))
 	nav.add_point("crops", "East greenhouse", "Crops", "Set the grow-light power plan.", "station", OutpostLayout.px(OutpostLayout.GREEN_SPOT))
+	nav.add_point("log", "Comms desk", "Log", "Write the evening log.", "station", OutpostLayout.px(OutpostLayout.LOG_SPOT))
+	nav.add_point("bunk", "Crew bunks", "Bunk", "Sleep to start the next day.", "station", OutpostLayout.px(OutpostLayout.BUNK_SPOT))
 	nav.add_point("shelter", "Storm shelter hatch", "Shelter", "Hold E to open the hatch, then step inside.", "hatch", OutpostLayout.px(OutpostLayout.HATCH_SPOT + Vector2(0, 16)))
 	nav.add_point("rivera", "Engineer Rivera", "Rivera", "Ask Rivera about outpost power.", "crew", _rivera.position, _rivera)
 	nav.add_point("tanaka", "Dr. Tanaka", "Tanaka", "Ask Tanaka about the greenhouse.", "crew", _tanaka.position, _tanaka)
@@ -344,7 +348,7 @@ func _on_power_used() -> void:
 	var s := ResourceSim.get_snapshot()
 	var body := "Battery: %d of %d cells charged.\nSolar panels: %s.\n" % [s["battery_cells"], s["battery_cells_total"], sun_text()]
 	FieldNotes.unlock(&"batteries")
-	if MissionDirector.stage == MissionDirector.Stage.CHECKS:
+	if MissionDirector.stage == MissionDirector.Stage.CHECKS and not MissionDirector.power_checked:
 		body += "The wall screen shows the Sun slipping behind a ridge in about 6 hours. Charging the rover uses 3 power.\n\nChoose the reserve plan:"
 		var panel := ChoicePanel.open(self, "POWER STATION", body, PackedStringArray([
 			"Fill the battery: pause rover charging",
@@ -364,7 +368,7 @@ func _on_power_choice(index: int) -> void:
 func _on_green_used() -> void:
 	var body := "Crop health: %d of 100.\n" % int(ResourceSim.crop_health)
 	FieldNotes.unlock(&"veggie")
-	if MissionDirector.stage == MissionDirector.Stage.CHECKS:
+	if MissionDirector.stage == MissionDirector.Stage.CHECKS and not MissionDirector.greenhouse_checked:
 		body += "Grow lights use 3 power. Conservation mode dims them to 1.5 power: the crops stop growing but stay healthy.\n\nChoose the plan:"
 		var panel := ChoicePanel.open(self, "GREENHOUSE", body, PackedStringArray([
 			"Full grow lights (crops keep growing)",
@@ -382,9 +386,68 @@ func _on_green_choice(index: int) -> void:
 
 
 func _after_check() -> void:
-	if MissionDirector.checks_done() and not _alert_started:
-		_alert_started = true
-		_alert_sequence()
+	if not MissionDirector.checks_done():
+		return
+	if MissionDirector.is_final_day():
+		if not _alert_started:
+			_alert_started = true
+			_alert_sequence()
+	else:
+		_hud.call(&"flash", "TASKS DONE  -  WRITE THE LOG", UiKit.AMBER)
+
+
+# ---------------------------------------------------------------- end of the day
+
+func _on_log_used() -> void:
+	var d := MissionDirector
+	if d.can_write_log():
+		var s := ResourceSim.get_snapshot()
+		var body := "Day %d of %d: %s\n\nBattery %d of %d cells.  Crop health %d.  Science %d.\n\nSave today's log and get some rest." % [
+			d.day, d.FINAL_DAY, str(d.day_plan().get("title", "")), s["battery_cells"], s["battery_cells_total"], int(s["crop_health"]), s["science_points"]]
+		var panel := ChoicePanel.open(self, "EVENING LOG", body, PackedStringArray(["Save the log"]))
+		panel.chosen.connect(func(_i: int) -> void:
+			if d.write_log():
+				_hud.call(&"flash", "LOG SAVED", UiKit.TEAL))
+		return
+	var line := "Finish today's tasks first, then log them here."
+	if d.log_written:
+		line = "Today's log is saved. Time to sleep."
+	elif d.is_final_day():
+		line = "No log tonight. Stay sharp today."
+	Dialogue.play(&"log_locked", "Comms desk", PackedStringArray([line]))
+
+
+func _on_bunk_used() -> void:
+	var d := MissionDirector
+	if not d.can_sleep():
+		var line := "Not yet. Finish today's tasks first."
+		if d.is_final_day():
+			line = "No sleeping on duty today."
+		elif d.checks_done():
+			line = "Write the evening log at the comms desk first."
+		Dialogue.play(&"bunk_locked", "Bunk", PackedStringArray([line]))
+		return
+	d.push_ui()
+	var layer := CanvasLayer.new()
+	layer.layer = 45
+	add_child(layer)
+	var shade := ColorRect.new()
+	shade.color = Color(0.02, 0.02, 0.06, 0.0)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(shade)
+	var fade := create_tween()
+	fade.tween_property(shade, "color:a", 1.0, 0.6)
+	await fade.finished
+	d.sleep()
+	await get_tree().create_timer(0.5, false).timeout
+	fade = create_tween()
+	fade.tween_property(shade, "color:a", 0.0, 0.6)
+	await fade.finished
+	layer.queue_free()
+	d.pop_ui()
+	_hud.call(&"flash", "DAY %d OF %d" % [d.day, d.FINAL_DAY], UiKit.AMBER)
+	Dialogue.play(&"morning", "Mission Control", PackedStringArray([
+		"Good morning, {name}. Day %d of %d: %s." % [d.day, d.FINAL_DAY, str(d.day_plan().get("title", ""))]]))
 
 
 func _alert_sequence() -> void:
@@ -424,7 +487,7 @@ func _show_debrief() -> void:
 func _on_debrief_choice(action: StringName) -> void:
 	match action:
 		&"retry":
-			MissionDirector.begin_mission()
+			MissionDirector.retry_storm()
 			SceneRouter.go_to(&"outpost")
 		&"academy":
 			SceneRouter.go_to(&"academy_hub")
@@ -610,6 +673,13 @@ func _draw() -> void:
 		var bed := _rect_of("beds", i)
 		draw_rect(Rect2(bed.position + Vector2(3, 4), Vector2(bed.size.x - 6, bed.size.y - 13)), wash)
 		draw_rect(_rect_of("bed_lamps", i), lamp)
+		# Plants: taller every day they grew under full lamps.
+		var tall := 2.0 + minf(4.0, float(ResourceSim.crop_growth)) * 2.0
+		var leaf := C_GREEN if ResourceSim.crop_health > 40.0 else C_AMBER_LO
+		for k in 4:
+			var stem := Vector2(bed.position.x + 6 + k * ((bed.size.x - 12.0) / 3.0), bed.end.y - 7)
+			draw_rect(Rect2(stem.x, stem.y - tall, 1, tall), leaf.darkened(0.2))
+			draw_rect(Rect2(stem.x - 1, stem.y - tall, 3, 1), leaf)
 		draw_rect(Rect2(bed.position + Vector2(bed.size.x - 9, bed.size.y - 6), Vector2(4, 2)), C_GREEN if lamps_on and not saving else (C_AMBER if lamps_on else C_DARK))
 	draw_rect(_rect_of("green_screen").grow(-1), lamp if lamps_on else Color("27304f"))
 	var tank := _rect_of("water_tank")
@@ -634,6 +704,10 @@ func _draw() -> void:
 	# --- Station markers: a pulsing ring until the check is done, then a quiet tick.
 	_marker(OutpostLayout.px(OutpostLayout.POWER_SPOT), d.power_checked, C_TEAL)
 	_marker(OutpostLayout.px(OutpostLayout.GREEN_SPOT), d.greenhouse_checked, C_GREEN)
+	if d.can_write_log():
+		_marker(OutpostLayout.px(OutpostLayout.LOG_SPOT), false, C_TEAL)
+	if d.can_sleep():
+		_marker(OutpostLayout.px(OutpostLayout.BUNK_SPOT), false, C_AMBER)
 	var pad := _point_of("transit_pad")
 	draw_arc(pad, 5.0 + sin(_time * 3.0), 0.0, TAU, 14, Color(C_TEAL, 0.7), 1.0)
 
