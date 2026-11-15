@@ -12,7 +12,8 @@ func _ready() -> void:
 	_add(&"move_down", [KEY_S, KEY_DOWN])
 	_add(&"interact", [KEY_E, KEY_SPACE, KEY_ENTER])
 	_add(&"pause_menu", [KEY_P])
-	_add(&"mute", [KEY_M])
+	_add(&"mute", [KEY_N])
+	_add(&"map_toggle", [KEY_M])
 
 
 func _add(action: StringName, keys: Array) -> void:

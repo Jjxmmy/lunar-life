@@ -12,6 +12,7 @@ var _time: float = 0.0
 
 func _ready() -> void:
 	add_to_group(&"interactable")
+	add_to_group(&"objective_targets")
 	if data == null:
 		push_error("Npc '%s' has no NPCData" % name)
 		return
@@ -66,6 +67,12 @@ func _process(delta: float) -> void:
 
 func prompt_text() -> String:
 	return "Talk"
+
+
+func get_objective_id() -> StringName:
+	if data == null:
+		return &""
+	return &"rivera" if data.id == &"engineer" else data.id
 
 
 func interact() -> void:

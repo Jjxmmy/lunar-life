@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Lunar Life"
-run/main_scene="res://scenes/ui/create_astronaut.tscn"
+run/main_scene="res://scenes/ui/title_screen.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
@@ -27,6 +27,7 @@ MissionDirector="*res://scripts/autoload/mission_director.gd"
 TaskLog="*res://scripts/autoload/task_log.gd"
 PauseMenu="*res://scripts/autoload/pause_menu.gd"
 Sfx="*res://scripts/autoload/sfx.gd"
+MapManager="*res://scripts/autoload/map_manager.gd"
 
 [display]
 
@@ -43,8 +44,8 @@ theme/default_font_antialiasing=0
 
 [physics]
 
-common/physics_interpolation=true
 3d/physics_engine="Jolt Physics"
+common/physics_interpolation=true
 
 [rendering]
 
@@ -54,4 +55,3 @@ renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 2d/snap/snap_2d_transforms_to_pixel=true
 2d/snap/snap_2d_vertices_to_pixel=true
-

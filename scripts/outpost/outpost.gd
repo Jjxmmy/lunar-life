@@ -78,17 +78,21 @@ func _ready() -> void:
 	if MissionDirector.stage < MissionDirector.Stage.CHECKS:
 		MissionDirector.begin_mission()
 
+	var first_arrival: bool = not GameState.get_flag(&"outpost_arrival_seen")
 	GameState.set_flag(&"outpost_visited")
+	if first_arrival:
+		GameState.set_flag(&"outpost_arrival_seen")
+		_show_arrival_moment()
 	_build_collision()
 	_power_label = _world_label("", Vector2(POWER_ROOM.position.x + 4, POWER_ROOM.position.y - 14), C_TEAL)
 	_green_label = _world_label("", Vector2(GREEN_ROOM.position.x + 4, GREEN_ROOM.position.y - 14), C_GREEN)
 	_shelter_label = _world_label("", Vector2(SHELTER_ROOM.position.x + 4, SHELTER_ROOM.position.y - 14), C_AMBER)
 	_shelter_note = _world_label("", Vector2(258, SHELTER_ROOM.position.y - 14), C_AMBER)
 
-	_add_station(POWER_SPOT, "Check power", _on_power_used)
-	_add_station(GREEN_SPOT, "Check crops", _on_green_used)
-	_add_station(SHELTER_SPOT, "Shelter here", _on_shelter_used)
-	_add_station(RETURN_SPOT, "Return to academy", _on_return_used)
+	_add_station(POWER_SPOT, "Check power", _on_power_used, &"power")
+	_add_station(GREEN_SPOT, "Check crops", _on_green_used, &"crops")
+	_add_station(SHELTER_SPOT, "Shelter here", _on_shelter_used, &"shelter")
+	_add_station(RETURN_SPOT, "Return to academy", _on_return_used, &"return", "Enter")
 	_world_label("ACADEMY TRANSIT", Vector2(211, 255), C_TEAL)
 
 	var actors := Node2D.new()
@@ -111,6 +115,7 @@ func _ready() -> void:
 	_rivera = _add_crew(actors, "Engineer Rivera", "res://assets/art/characters/npc_engineer.png",
 		RIVERA_ROUTE[-1] if sheltered else RIVERA_HOME, _on_rivera_used)
 
+	_add_navigation(player)
 	_build_hud()
 	MissionDirector.stage_changed.connect(_on_stage_changed)
 	MissionDirector.objectives_changed.connect(_refresh)
@@ -119,6 +124,40 @@ func _ready() -> void:
 	_refresh()
 	if MissionDirector.stage == MissionDirector.Stage.DEBRIEF:
 		_show_debrief.call_deferred()
+
+
+func _show_arrival_moment() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 46
+	add_child(layer)
+	var moment := Control.new()
+	moment.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	moment.set_script(load("res://scripts/ui/story_moment.gd"))
+	moment.set("moment", 1)
+	layer.add_child(moment)
+	moment.tree_exited.connect(layer.queue_free)
+
+
+func _add_navigation(player: Node2D) -> void:
+	var nav := NavigationFloor.new()
+	nav.facility = "Outpost"
+	nav.bounds = Vector2(MAP) * SCALE
+	nav.player = player
+	for walkable: Rect2 in FLOORS:
+		nav.floors.append(Rect2(walkable.position * SCALE, walkable.size * SCALE))
+	nav.links = {"Academy": "return"}
+	nav.add_point("entrance", "Outpost entrance", "Entry", "Arrival corridor from the academy.", "hatch", SPAWN * SCALE)
+	nav.add_point("return", "Academy transit hatch", "Transit", "Return to the academy before the alert.", "hatch", RETURN_SPOT * SCALE)
+	nav.add_point("power", "West power station", "Power", "Check battery reserves and rover charging.", "station", POWER_SPOT * SCALE)
+	nav.add_point("crops", "East greenhouse", "Crops", "Select a grow light power policy.", "station", GREEN_SPOT * SCALE)
+	nav.add_point("shelter", "Shielded shelter", "Shelter", "Reach this station during a radiation alert.", "station", SHELTER_SPOT * SCALE)
+	nav.add_point("rivera", "Engineer Rivera", "Rivera", "Ask Rivera about outpost power.", "crew", _rivera.position, _rivera)
+	nav.add_point("tanaka", "Dr. Tanaka", "Tanaka", "Ask Tanaka about the greenhouse.", "crew", _tanaka.position, _tanaka)
+	add_child(nav)
+	var objective_hud := CanvasLayer.new()
+	objective_hud.set_script(load("res://scripts/ui/objective_hud.gd"))
+	add_child(objective_hud)
+	objective_hud.call_deferred(&"configure", nav)
 
 
 func _process(delta: float) -> void:
@@ -139,9 +178,11 @@ func _process(delta: float) -> void:
 
 # ---------------------------------------------------------------- stations
 
-func _add_station(pos: Vector2, prompt: String, handler: Callable) -> void:
+func _add_station(pos: Vector2, prompt: String, handler: Callable, objective_id: StringName, verb: String = "Use") -> void:
 	var station := Station.new()
 	station.prompt = prompt
+	station.objective_id = objective_id
+	station.interaction_verb = verb
 	station.position = (pos * SCALE).round()
 	station.used.connect(handler)
 	add_child(station)
@@ -262,18 +303,19 @@ func _alert_sequence() -> void:
 		first = "RADIATION ALERT! NASA recorded a solar particle event on %s. This is an archived record, replayed in our simulation." % MissionDirector.sep_time_text()
 	Dialogue.play(&"alert", "Mission Control", PackedStringArray([
 		first,
-		"Walk NORTH to the SHIELDED SHELTER and press E at the hatch control. The storm clock runs while you walk."]))
+		"Solar energetic particles can harm people. The Moon has almost no atmosphere or global magnetic field to shield a crew.",
+		"Go NORTH to the thick-walled shelter and press E at its control. The clock runs while you walk. Life Support stays on; choose optional loads once safe."]))
 
 
 func _on_shelter_used() -> void:
 	match MissionDirector.stage:
 		MissionDirector.Stage.ALERT:
 			var s := ResourceSim.get_snapshot()
-			var body := "Thick walls block most storm particles in here.\nThe Sun is also about to go behind a ridge (that is the terrain, not the storm), so power is tight.\nBattery: %d of %d cells. What stays on while the crew shelters?" % [s["battery_cells"], s["battery_cells_total"]]
+			var body := "This room adds shielding between the crew and energetic solar particles. NASA monitors space weather and uses radiation measurements to help decide when crews should shelter.\n\nThe Sun is also about to go behind a ridge, so battery power is limited. Life Support remains on. Which optional loads should wait? Battery: %d of %d cells." % [s["battery_cells"], s["battery_cells_total"]]
 			var panel := ChoicePanel.open(self, "SHELTER: you are inside the shield", body, PackedStringArray([
-				"Pause science. Keep full grow lights.",
-				"Keep science. Crops in conservation mode.",
-				"Pause science AND conservation mode (saves most)."]))
+				"Pause science. Keep full grow lights. Saves science power.",
+				"Keep science. Put crops in conservation mode. Saves grow-light power.",
+				"Pause science and conserve crops. Saves the most power; slows both activities."]))
 			panel.chosen.connect(_on_shelter_choice)
 		MissionDirector.Stage.CHECKS:
 			Dialogue.play(&"shelter_info", "Shelter", PackedStringArray([
@@ -344,7 +386,7 @@ func _show_sources() -> void:
 		text = "Event: NASA CCMC DONKI solar energetic particle record (ARCHIVED copy, retrieved %s).\nID: %s\nTime: %s. Instrument: %s.\nLink: %s" % [
 			MissionDirector.sep_retrieved, MissionDirector.sep_event_id(), MissionDirector.sep_time_text(),
 			MissionDirector.sep_instrument(), MissionDirector.sep_link()]
-	text += "\nThis record is a detection near Earth, NOT a radiation dose at a lunar outpost. Exposure, battery and power are simplified game units, and time is compressed. The sunlight shadow comes from terrain, not from the storm."
+	text += "\nThis record is a detection near Earth, not a radiation dose at a lunar outpost. Exposure, battery and power are simplified game units, and time is compressed. The sunlight shadow comes from terrain, not from the storm.\n\nNASA space-radiation overview: nasa.gov/hrp/hazard-space-radiation/"
 	var panel := ChoicePanel.open(self, "SOURCE NOTES", text, PackedStringArray(["Back to debrief"]), false)
 	panel.chosen.connect(func(_i: int) -> void: _show_debrief())
 

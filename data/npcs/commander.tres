@@ -9,5 +9,5 @@ id = &"commander"
 display_name = "Commander Okafor"
 role = "Academy Head"
 sprite = ExtResource("2_tex")
-lines = PackedStringArray("Welcome, {name}. Here is your mission.", "Keep the crew breathing. Check the power reserve and the crops.", "When the radiation alert sounds, reach the shielded shelter.", "Move with WASD or the arrow keys. Press E to talk and to use stations. Talk to me to hear this again.", "First, train with Engineer Rivera at the power console. Then leave through the exit hatch.")
+lines = PackedStringArray("Welcome, {name}. Train here before joining the lunar research crew.", "Power runs air, heat and water. Batteries help when sunlight drops.", "Space weather can raise radiation risk. Follow alerts to the shielded shelter. Rivera will teach you to manage power.")
 opens_scene = &""

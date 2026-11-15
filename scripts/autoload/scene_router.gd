@@ -4,6 +4,7 @@ extends Node
 ## or emit EventBus.scene_change_requested(&"id").
 
 const SCENES: Dictionary = {
+	&"title_screen": "res://scenes/ui/title_screen.tscn",
 	&"create_astronaut": "res://scenes/ui/create_astronaut.tscn",
 	&"academy_hub": "res://scenes/academy/academy_hub.tscn",
 	&"power_console": "res://scenes/minigames/power_console.tscn",

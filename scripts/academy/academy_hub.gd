@@ -15,14 +15,16 @@ const COMMANDER_DATA := "res://data/npcs/commander.tres"
 
 ## Which NPCData goes where (feet position in pixels).
 const NPC_SPOTS: Dictionary = {
-	"res://data/npcs/commander.tres": Vector2(118, 106),
+	"res://data/npcs/commander.tres": Vector2(206, 101),
 	"res://data/npcs/engineer.tres": Vector2(372, 150),
 	"res://data/npcs/botanist.tres": Vector2(96, 196),
 }
 
 var _player: Node2D
+var _training_cue: ColorRect
 
 var _console_open: bool = false
+var _cinematic_layer: CanvasLayer
 
 
 func _ready() -> void:
@@ -30,8 +32,8 @@ func _ready() -> void:
 	ResourceSim.paused = true
 
 	_build_room()
-	_add_landmark(Vector2(94, 84), "Read mission board", "Mission board", "The outpost has three branches: power west, greenhouse east, and shelter north.")
-	_add_landmark(Vector2(52, 193), "Inspect plant bench", "Plant bench", "Grow lights help crops grow. Conservation mode gives the battery more time in the shade.")
+	_add_landmark(Vector2(180, 86), "Read mission board", "Mission board", "Power west · greenhouse east · shelter north.", &"briefing")
+	_add_landmark(Vector2(52, 193), "Inspect plant bench", "Plant bench", "Grow lights use power. Conservation mode stretches the battery in shadow.", &"plants")
 
 	var actors := Node2D.new()
 	actors.name = "Actors"
@@ -47,6 +49,8 @@ func _ready() -> void:
 
 	var hatch := Station.new()
 	hatch.prompt = "Travel to lunar outpost" if MissionDirector.can_graduate() else "Inspect locked exit"
+	hatch.interaction_verb = "Enter"
+	hatch.objective_id = &"exit"
 	hatch.position = HATCH * SCALE
 	hatch.used.connect(_on_hatch_used)
 	add_child(hatch)
@@ -55,22 +59,47 @@ func _ready() -> void:
 	player.position = (Vector2(424, 103) if GameState.get_flag(&"outpost_visited") else Vector2(240, 214)) * SCALE
 	actors.add_child(player)
 
+	_add_navigation(player)
 	_player = player
 	HabitatCamera.mount(player, Vector2i(ROOM * SCALE))
 	EventBus.dialogue_ended.connect(_on_dialogue_ended)
 	EventBus.certification_earned.connect(func(id: StringName) -> void:
 		if id == &"power_console":
 			hatch.prompt = "Travel to lunar outpost"
+			_show_story_moment(0)
 	)
 
 	if MissionDirector.stage == MissionDirector.Stage.BRIEFING:
 		_play_briefing.call_deferred()
 
 
-func _add_landmark(at: Vector2, action: String, title: String, description: String) -> void:
+func _add_navigation(player: Node2D) -> void:
+	var nav := NavigationFloor.new()
+	nav.facility = "Academy"
+	nav.bounds = ROOM * SCALE
+	nav.player = player
+	nav.floors = [Rect2(0, WALL_HEIGHT * SCALE, nav.bounds.x, (ROOM.y - WALL_HEIGHT) * SCALE)]
+	nav.links = {"Outpost": "exit"}
+	nav.add_point("entrance", "Academy entrance", "Entry", "The academy arrival area.", "hatch", Vector2(240, 214) * SCALE)
+	nav.add_point("commander", "Commander Okafor", "Okafor", "Speak to the commander for your briefing.", "crew", NPC_SPOTS[COMMANDER_DATA] * SCALE)
+	nav.add_point("briefing", "Mission board", "Board", "Read about the outpost layout.", "station", Vector2(180, 86) * SCALE)
+	nav.add_point("rivera", "Engineer Rivera", "Rivera", "Speak to Rivera to start training.", "crew", NPC_SPOTS["res://data/npcs/engineer.tres"] * SCALE)
+	nav.add_point("training", "Power Console training", "Training", "Use the console by talking to Rivera.", "station", Vector2(387, 149) * SCALE)
+	nav.add_point("botanist", "Dr. Tanaka", "Tanaka", "Ask the botanist about the greenhouse.", "crew", NPC_SPOTS["res://data/npcs/botanist.tres"] * SCALE)
+	nav.add_point("plants", "Plant bench", "Plants", "Learn how grow lights use power.", "station", Vector2(52, 193) * SCALE)
+	nav.add_point("exit", "Outpost transit hatch", "Transit", "Earn your certificate to unlock departure.", "hatch", HATCH * SCALE)
+	add_child(nav)
+	var objective_hud := CanvasLayer.new()
+	objective_hud.set_script(load("res://scripts/ui/objective_hud.gd"))
+	add_child(objective_hud)
+	objective_hud.call_deferred(&"configure", nav)
+
+
+func _add_landmark(at: Vector2, action: String, title: String, description: String, objective_id: StringName) -> void:
 	var station := Station.new()
 	station.position = at * SCALE
 	station.prompt = action
+	station.objective_id = objective_id
 	station.used.connect(func() -> void:
 		Dialogue.play(&"academy_landmark", title, PackedStringArray([description]))
 	)
@@ -78,12 +107,39 @@ func _add_landmark(at: Vector2, action: String, title: String, description: Stri
 
 
 func _play_briefing() -> void:
+	if not GameState.get_flag(&"intro_cinematic_seen"):
+		_start_intro_cinematic()
+		return
 	var data := load(COMMANDER_DATA) as NPCData
 	Dialogue.play(data.id, "%s, %s" % [data.display_name, data.role], data.lines)
 
 
+func _start_intro_cinematic() -> void:
+	MissionDirector.push_ui()
+	_cinematic_layer = CanvasLayer.new()
+	_cinematic_layer.layer = 45
+	add_child(_cinematic_layer)
+	var visual := Control.new()
+	visual.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	visual.set_script(load("res://scripts/ui/mission_cinematic.gd"))
+	_cinematic_layer.add_child(visual)
+	Dialogue.play_cinematic(&"intro_cinematic", "Mission Control", PackedStringArray([
+		"Your mission begins at the Astronaut Academy.",
+		"NASA's May 2024 solar particle record inspires this warning simulation.",
+		"Complete your training. Protect your crew.",
+	]))
+
+
+
 func _on_dialogue_ended(id: StringName) -> void:
-	if id == &"commander":
+	if id == &"intro_cinematic":
+		MissionDirector.pop_ui()
+		GameState.set_flag(&"intro_cinematic_seen")
+		if is_instance_valid(_cinematic_layer):
+			_cinematic_layer.queue_free()
+		_cinematic_layer = null
+		_play_briefing.call_deferred()
+	elif id == &"commander":
 		MissionDirector.finish_briefing()
 	elif id == &"engineer" and not GameState.get_flag(&"outpost_visited"):
 		_open_training()
@@ -107,6 +163,18 @@ func _open_training() -> void:
 	layer.add_child(console)
 
 
+func _show_story_moment(moment_id: int) -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 46
+	add_child(layer)
+	var moment := Control.new()
+	moment.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	moment.set_script(load("res://scripts/ui/story_moment.gd"))
+	moment.set("moment", moment_id)
+	layer.add_child(moment)
+	moment.tree_exited.connect(layer.queue_free)
+
+
 func _on_hatch_used() -> void:
 	if MissionDirector.can_graduate():
 		if not GameState.get_flag(&"outpost_visited"):
@@ -118,6 +186,7 @@ func _on_hatch_used() -> void:
 
 
 func _process(_delta: float) -> void:
+	_training_cue.visible = MissionDirector.stage == MissionDirector.Stage.TRAINING and not Dialogue.is_active and not _console_open
 	if GameState.get_flag(&"academy_explored") or Dialogue.is_active or MissionDirector.ui_open:
 		return
 	var zones: int = GameState.get_flag(&"academy_zones", 0)
@@ -148,13 +217,15 @@ func _build_room() -> void:
 	_rect(Rect2(0, 150, ROOM.x, 1), amber.darkened(0.3))
 	_rect(Rect2(0, 193, ROOM.x, 1), amber.darkened(0.3))
 
+	_paint_zones(amber, teal)
+
 	# Mission map board (amber = briefing).
 	_rect(Rect2(70, 12, 96, 42), amber.darkened(0.45))
 	_rect(Rect2(73, 15, 90, 36), Color(0.2, 0.22, 0.4))
 	_rect(Rect2(98, 20, 40, 26), Color(0.62, 0.62, 0.7))
 	for dot: Vector2 in [Vector2(108, 28), Vector2(122, 36), Vector2(130, 24)]:
 		_rect(Rect2(dot, Vector2(3, 3)), Color(0.9, 0.3, 0.3))
-	_label("MISSION MAP", Vector2(70, 2), amber)
+	_label("RESEARCH  /  SPACE WEATHER", Vector2(70, 2), Color("#caa0fc"))
 
 	# Large lunar window with Earth.
 	_rect(Rect2(196, 6, 88, 50), steel)
@@ -163,6 +234,18 @@ func _build_room() -> void:
 	_rect(Rect2(212, 34, 26, 5), Color(0.5, 0.5, 0.58))
 	_rect(Rect2(256, 16, 10, 10), Color(0.3, 0.55, 0.95))
 	_rect(Rect2(259, 18, 4, 4), Color(0.45, 0.8, 0.55))
+
+	# A second observation window opens the lab wall onto the lunar ridge.
+	_rect(Rect2(300, 13, 57, 42), steel.lightened(0.25))
+	_rect(Rect2(303, 16, 51, 36), Color("#171931"))
+	var ridge := Polygon2D.new()
+	ridge.polygon = PackedVector2Array([Vector2(303, 42), Vector2(315, 33),
+		Vector2(329, 41), Vector2(340, 29), Vector2(354, 40), Vector2(354, 52),
+		Vector2(303, 52)])
+	ridge.scale = Vector2.ONE * SCALE
+	ridge.color = Color("#79728d")
+	add_child(ridge)
+	_rect(Rect2(327, 16, 2, 36), steel.darkened(0.23))
 
 	# Exit hatch (amber/black caution stripes + label).
 	_rect(Rect2(400, 14, 48, 50), steel)
@@ -187,6 +270,7 @@ func _build_room() -> void:
 	_wall(Rect2(28, 204, 44, 16))
 
 	_add_details(steel, amber, teal)
+	_add_training_decor(amber, teal)
 
 	# Invisible walls so nobody walks out of the room.
 	_wall(Rect2(0, 0, ROOM.x, WALL_HEIGHT + 8))
@@ -203,7 +287,7 @@ func _add_details(steel: Color, amber: Color, teal: Color) -> void:
 	for y in [87, 108, 129, 212, 234, 256]:
 		_rect(Rect2(4, y, 208, 1), steel.darkened(0.25))
 		_rect(Rect2(268, y, 208, 1), steel.darkened(0.25))
-	for x in [6, 42, 172, 288, 336, 370, 458]:
+	for x in [6, 42, 172, 288, 370, 458]:
 		_rect(Rect2(x, 6, 14, 48), steel.darkened(0.26))
 		_rect(Rect2(x + 2, 8, 2, 41), steel.lightened(0.12))
 		_rect(Rect2(x + 3, 55, 9, 3), teal.darkened(0.3))
@@ -222,7 +306,6 @@ func _add_details(steel: Color, amber: Color, teal: Color) -> void:
 		_rect(Rect2(x + 2, 225, 30, 3), Color("#b78481"))
 		_wall(Rect2(x, 224, 34, 20))
 	_label("CREW LOUNGE", Vector2(222, 242), amber)
-	_label("BRIEFING", Vector2(113, 82), amber)
 	for x in [400, 432]:
 		_rect(Rect2(x, 120, 4, 3), amber)
 		var glow := get_child(get_child_count() - 1) as ColorRect
@@ -231,13 +314,88 @@ func _add_details(steel: Color, amber: Color, teal: Color) -> void:
 		tween.tween_property(glow, "modulate:a", 1.0, 1.15)
 
 
-func _rect(r: Rect2, color: Color) -> void:
+func _paint_zones(amber: Color, teal: Color) -> void:
+	for zone: Array in [
+		[Vector2(12, 77), Vector2(150, 141), Color("#a480d4")],
+		[Vector2(155, 73), Vector2(280, 146), amber],
+		[Vector2(281, 76), Vector2(470, 147), teal],
+	]:
+		var a: Vector2 = zone[0]
+		var b: Vector2 = zone[1]
+		var accent: Color = zone[2]
+		var outline := Polygon2D.new()
+		outline.polygon = PackedVector2Array([
+			(a + Vector2(8, 0)) * SCALE, Vector2(b.x - 8, a.y) * SCALE,
+			Vector2(b.x, a.y + 8) * SCALE, (b - Vector2(0, 8)) * SCALE,
+			(b - Vector2(8, 0)) * SCALE, Vector2(a.x + 8, b.y) * SCALE,
+			Vector2(a.x, b.y - 8) * SCALE, (a + Vector2(0, 8)) * SCALE])
+		outline.color = accent.darkened(0.68)
+		add_child(outline)
+		_rect(Rect2(a.x + 8, a.y + 2, b.x - a.x - 16, 2), accent.darkened(0.28))
+		_rect(Rect2(a.x + 8, b.y - 4, b.x - a.x - 16, 2), accent.darkened(0.38))
+
+
+func _add_training_decor(amber: Color, teal: Color) -> void:
+	var violet := Color("#caa0fc")
+	# The commander stands beside this screen. The walkway in front stays clear.
+	_fixture(Rect2(164, 74, 49, 9), Color("#63536f"), amber)
+	_rect(Rect2(167, 75, 23, 5), Color("#252747"))
+	_pulse(_rect(Rect2(169, 76, 16, 2), amber), 1.1)
+	_label("BRIEFING HALL", Vector2(222, 118), amber)
+	for seat_x in [163, 178]:
+		_fixture(Rect2(seat_x, 119, 12, 14), Color("#735569"), Color("#d88972"))
+	# A waveform is a visual cue. The timestamp comes from the mission record.
+	_rect(Rect2(75, 16, 86, 34), Color("#17172e"))
+	var wave := Line2D.new()
+	wave.width = 1.0
+	wave.default_color = violet
+	wave.points = PackedVector2Array([
+		Vector2(79, 34), Vector2(94, 34), Vector2(103, 30), Vector2(111, 42),
+		Vector2(117, 22), Vector2(126, 29), Vector2(139, 33), Vector2(157, 33)])
+	wave.scale = Vector2.ONE * SCALE
+	add_child(wave)
+	_label("DONKI  /  ARCHIVE", Vector2(78, 18), violet)
+	_label(MissionDirector.sep_time_text() if MissionDirector.sep_is_real else "TRAINING SIMULATION", Vector2(78, 42), violet)
+	_pulse(_rect(Rect2(151, 20, 5, 2), violet), 1.4)
+	for rack_x in [16, 37, 58]:
+		_fixture(Rect2(rack_x, 93, 17, 26), Color("#4c4363"), violet.darkened(0.23))
+		for vent in 3:
+			_rect(Rect2(rack_x + 4, 103 + vent * 4, 8, 1), Color("#221c35"))
+	# Battery racks feed the lab console along an inset cable channel.
+	for rack_x in [292, 313]:
+		_fixture(Rect2(rack_x, 98, 18, 33), Color("#405564"), teal)
+		for cell in 3:
+			_rect(Rect2(rack_x + 4, 106 + 6 * cell, 10, 3), teal.darkened(0.26))
+	_rect(Rect2(332, 122, 60, 3), Color("#1c263a"))
+	_rect(Rect2(332, 122, 60, 1), teal.darkened(0.35))
+	_label("POWER SYSTEMS LAB", Vector2(290, 82), teal)
+	_pulse(_rect(Rect2(299, 101, 4, 2), teal), 0.85)
+	_training_cue = _rect(Rect2(394, 133, 48, 3), teal)
+	_training_cue.hide()
+	_pulse(_training_cue, 0.75)
+
+
+func _fixture(r: Rect2, body: Color, accent: Color) -> void:
+	_rect(Rect2(r.position + Vector2(2, 3), r.size), Color("#18182c"))
+	_rect(r, body)
+	_rect(Rect2(r.position + Vector2(2, 2), Vector2(r.size.x - 4, 2)), accent)
+	_wall(r)
+
+
+func _pulse(light: ColorRect, seconds: float) -> void:
+	var tween := light.create_tween().set_loops().set_trans(Tween.TRANS_SINE)
+	tween.tween_property(light, "modulate:a", 0.32, seconds)
+	tween.tween_property(light, "modulate:a", 1.0, seconds)
+
+
+func _rect(r: Rect2, color: Color) -> ColorRect:
 	var c := ColorRect.new()
 	c.position = (r.position * SCALE).round()
 	c.size = (r.end * SCALE).round() - c.position
 	c.color = color
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(c)
+	return c
 
 
 func _label(text: String, pos: Vector2, color: Color) -> void:

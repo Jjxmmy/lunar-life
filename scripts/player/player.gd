@@ -41,6 +41,7 @@ const TURN_TIME := {
 
 var _sprite: AnimatedSprite2D
 var _prompt: Label
+var _prompt_back: Panel
 var _target: Node2D
 var _dust: CPUParticles2D
 var _state: State = State.IDLE
@@ -89,10 +90,23 @@ func _ready() -> void:
 	shape.position = Vector2(0, -4)
 	add_child(shape)
 
+	_prompt_back = Panel.new()
+	_prompt_back.position = Vector2(-51, -65)
+	_prompt_back.size = Vector2(102, 16)
+	_prompt_back.z_index = 2
+	var prompt_style := StyleBoxFlat.new()
+	prompt_style.bg_color = Color("111c32", 0.92)
+	prompt_style.border_color = Color("e5c06f")
+	prompt_style.set_border_width_all(1)
+	prompt_style.set_content_margin_all(2)
+	_prompt_back.add_theme_stylebox_override("panel", prompt_style)
+	_prompt_back.visible = false
+	add_child(_prompt_back)
+
 	_prompt = Label.new()
 	_prompt.add_theme_font_size_override("font_size", 8)
 	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_prompt.position = Vector2(-50, -55)
+	_prompt.position = Vector2(-50, -63)
 	_prompt.z_index = 3
 	_prompt.add_theme_color_override("font_shadow_color", Color("#18182a"))
 	_prompt.add_theme_constant_override("shadow_offset_y", 1)
@@ -107,6 +121,7 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		_dust.emitting = false
 		_prompt.visible = false
+		_prompt_back.visible = false
 		_moving = false
 		if _state != State.IDLE:
 			_go_idle()
@@ -274,8 +289,9 @@ func _update_target() -> void:
 			best = d
 			_target = other
 	_prompt.visible = _target != null
+	_prompt_back.visible = _target != null
 	if _target != null:
 		var what := "Use"
 		if _target.has_method(&"prompt_text"):
 			what = _target.call(&"prompt_text")
-		_prompt.text = "E: %s" % what
+		_prompt.text = "[E] %s" % what

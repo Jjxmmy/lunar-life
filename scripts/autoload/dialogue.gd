@@ -13,6 +13,8 @@ var _panel: PanelContainer
 var _speaker_label: Label
 var _text_label: Label
 var _reveal: float = 0.0
+var _cinematic: bool = false
+var _cinematic_hold: float = 0.0
 
 const CHARS_PER_SECOND := 55.0
 
@@ -67,6 +69,15 @@ func play(id: StringName, speaker: String, lines: PackedStringArray) -> void:
 	EventBus.dialogue_started.emit(_id)
 
 
+func play_cinematic(id: StringName, speaker: String, lines: PackedStringArray) -> void:
+	if is_active or lines.is_empty():
+		return
+	_cinematic = true
+	_panel.position = Vector2(190, 207)
+	_panel.size = Vector2(282, 55)
+	play(id, speaker, lines)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_active:
 		return
@@ -80,24 +91,32 @@ func _unhandled_input(event: InputEvent) -> void:
 			_reveal = 100000.0
 			_text_label.visible_characters = -1
 			return
-		Sfx.play(&"next")
-		_index += 1
-		if _index >= _lines.size():
-			_finish()
-		else:
-			_show_line()
+		_advance()
 
 
 func _process(delta: float) -> void:
-	if not is_revealing():
+	if is_revealing():
+		var before := int(_reveal)
+		_reveal += delta * CHARS_PER_SECOND
+		_text_label.visible_characters = int(_reveal)
+		if int(_reveal) / 3 != before / 3:
+			Sfx.play(&"talk")
+		if int(_reveal) >= _text_label.text.length():
+			_text_label.visible_characters = -1
 		return
-	var before := int(_reveal)
-	_reveal += delta * CHARS_PER_SECOND
-	_text_label.visible_characters = int(_reveal)
-	if int(_reveal) / 3 != before / 3:
-		Sfx.play(&"talk")
-	if int(_reveal) >= _text_label.text.length():
-		_text_label.visible_characters = -1
+	if _cinematic:
+		_cinematic_hold -= delta
+		if _cinematic_hold <= 0.0:
+			_advance()
+
+
+func _advance() -> void:
+	Sfx.play(&"next")
+	_index += 1
+	if _index >= _lines.size():
+		_finish()
+	else:
+		_show_line()
 
 
 ## True while the current line is still being typed out.
@@ -109,9 +128,15 @@ func _show_line() -> void:
 	_text_label.text = _lines[_index].replace("{name}", GameState.player_name)
 	_reveal = 0.0
 	_text_label.visible_characters = 0
+	_cinematic_hold = 2.15
 
 
 func _finish() -> void:
 	is_active = false
 	_panel.visible = false
+	if _cinematic:
+		_panel.position = Vector2(8, 202)
+		_panel.size = Vector2(464, 60)
+	_cinematic = false
+	_cinematic_hold = 0.0
 	EventBus.dialogue_ended.emit(_id)

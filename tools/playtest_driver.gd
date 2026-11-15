@@ -93,11 +93,7 @@ func _walk(points: Array) -> void:
 			t += get_physics_process_delta_time()
 		for a: StringName in [&"move_left", &"move_right", &"move_up", &"move_down"]:
 			Input.action_release(a)
-		for _i in 20:
-			if p.velocity.length() < 1.0:
-				break
-			await get_tree().physics_frame
-		_check(p.global_position.distance_to(target) <= 6.0, "walked to %s (at %s)" % [target, p.global_position.round()])
+		_check(p.global_position.distance_to(target) <= 3.0, "walked to %s (at %s)" % [target, p.global_position.round()])
 
 
 func _talk_through(max_lines: int = 40) -> void:
@@ -204,6 +200,22 @@ func _run() -> void:
 	print("[outpost]")
 	_check(get_tree().current_scene.name == "Outpost" and D.stage == D.Stage.CHECKS, "outpost loaded -> CHECKS")
 	await _shot("07_outpost")
+	_check(MapManager.floor.facility == "Outpost", "outpost navigation attaches")
+	MapManager.get("_mini").pressed.emit()
+	await _wait(0.3)
+	_check(get_tree().paused and MapManager.owns_pause, "minimap opens and pauses")
+	var map_view := MapManager.get("_display") as MapDisplay
+	map_view.change_zoom(1.2)
+	_check(map_view.zoom > 1.0, "expanded map zooms")
+	map_view.selected.emit("power")
+	_check(MapManager.target_id == "power" and MapManager.floor.route.size() > 8, "selecting a destination plots a route")
+	var blocked_route := false
+	for point in MapManager.floor.route:
+		blocked_route = blocked_route or MapManager.floor.grid.is_point_solid(Vector2i((point / NavigationFloor.CELL).floor()))
+	_check(not blocked_route, "all route cells are walkable")
+	await _press(&"ui_cancel")
+	await _wait(0.25)
+	_check(not get_tree().paused, "Escape closes map and resumes")
 	await _press(&"interact")
 	_check(not D.ui_open and not Dialogue.is_active, "E far from stations does nothing")
 	var p := _player()
@@ -222,6 +234,9 @@ func _run() -> void:
 	_check(D.ui_open, "power panel opens next to the station")
 	await _shot("08_power_panel")
 	await _choose(1 if _args["rover"] == 1 else 0)
+	_check(MapManager.target_id.is_empty(), "arriving near the power station clears a manual waypoint")
+	MapManager.set_waypoint("Academy", "entrance")
+	_check(MapManager.local_target() == "return", "cross-facility route targets the transit hatch")
 	_check(D.power_checked and ResourceSim.is_powered(&"rover") == (_args["rover"] == 1), "power check done, rover policy applied")
 	_check(D.stage == D.Stage.CHECKS, "one check does not start the alert")
 
@@ -229,6 +244,8 @@ func _run() -> void:
 	await _press(&"interact")
 	await _wait(1.0)
 	_check(get_tree().current_scene.name == "AcademyHub", "south hatch returns to the academy")
+	_check(MapManager.target_facility == "Academy" and MapManager.local_target() == "entrance", "waypoint survives scene travel")
+	MapManager.clear_waypoint()
 	_check(D.power_checked and D.can_graduate() and ResourceSim.hour == 4, "academy return preserves mission and certificate")
 	await _walk([Vector2(424, 88)])
 	await _press(&"interact")
@@ -267,6 +284,16 @@ func _run() -> void:
 	await _press(&"ui_down")
 	await _press(&"ui_accept")
 	_check(PauseMenu.get("_page") == "tasks", "Down and Enter open the task log")
+	var track_buttons := PauseMenu.find_children("*", "Button", true, false)
+	var tracked_alert := false
+	for button: Button in track_buttons:
+		if button.text == "Track objective" and button.get_index() == button.get_parent().get_child_count() - 1:
+			button.pressed.emit()
+			tracked_alert = MapManager.tracked_task == "Respond to the space weather alert"
+			break
+	_check(tracked_alert and MapManager.local_target() == "shelter", "task menu tracks the shelter objective")
+	await _press(&"ui_cancel")
+	_click(PauseMenu, "Tasks")
 	_check(TaskLog.entries().any(func(task: Dictionary) -> bool: return task.title == "Check outpost power" and task.done), "task log records completed outpost check")
 	await _shot("16_tasks")
 	await _press(&"ui_cancel")
@@ -293,6 +320,7 @@ func _run() -> void:
 	var outside := D.hours_unsheltered
 	await _choose(int(_args["choice"]))
 	_check(D.stage == D.Stage.SHELTERED and ResourceSim.crew_sheltered, "sheltered")
+	_check(MapManager.target_id.is_empty(), "finishing the tracked task clears its waypoint")
 	D.confirm_shelter(0)
 	_check(D.shelter_choice == int(_args["choice"]), "a second confirm does nothing")
 	t = 0.0

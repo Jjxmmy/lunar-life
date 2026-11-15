@@ -41,10 +41,16 @@ func _ready() -> void:
 
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.add_theme_constant_override("margin_left", 12)
+	center.add_theme_constant_override("margin_right", 12)
+	center.add_theme_constant_override("margin_top", 12)
+	center.add_theme_constant_override("margin_bottom", 12)
 	center.theme = t
 	add_child(center)
 
 	var frame := PanelContainer.new()
+	frame.custom_minimum_size = Vector2(400, 0)
+	frame.custom_maximum_size = Vector2(456, 246)
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.13, 0.13, 0.24)
 	style.border_color = Color(0.3, 0.85, 0.8)
@@ -54,8 +60,7 @@ func _ready() -> void:
 	center.add_child(frame)
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 3)
-	box.custom_minimum_size = Vector2(330, 0)
+	box.add_theme_constant_override("separation", 5)
 	frame.add_child(box)
 
 	var title := Label.new()
@@ -63,17 +68,25 @@ func _ready() -> void:
 	title.modulate = Color(1.0, 0.82, 0.3)
 	box.add_child(title)
 
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(0, 72)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	box.add_child(scroll)
 	var body := Label.new()
 	body.text = _body
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	body.custom_minimum_size = Vector2(330, 0)
-	box.add_child(body)
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.custom_minimum_size.x = 360
+	scroll.add_child(body)
 
 	var first: Button = null
 	for i in _options.size():
 		var b := Button.new()
 		b.text = _options[i]
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.custom_minimum_size.y = 22
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(_choose.bind(i))
 		box.add_child(b)
 		if first == null:
@@ -86,6 +99,11 @@ func _ready() -> void:
 
 	if first != null:
 		first.grab_focus.call_deferred()
+	if _options.is_empty():
+		var close_button := Button.new()
+		close_button.text = "Close"
+		close_button.pressed.connect(close)
+		box.add_child(close_button)
 
 
 func _input(event: InputEvent) -> void:

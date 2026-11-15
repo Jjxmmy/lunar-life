@@ -62,7 +62,7 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if event.is_echo():
+	if event.is_echo() or MapManager.owns_pause:
 		return
 	if SceneRouter.is_transitioning():
 		return
@@ -127,7 +127,7 @@ func _show_page(page: String) -> void:
 			_button("Quit Game", _show_page.bind("quit"))
 		"help":
 			_heading("FLIGHT MANUAL")
-			_text(_content, "WASD / arrows   Walk\nE / Space / Enter   Interact or advance dialogue\nEsc   Back or close the active panel\nP / menu icon   Pause any screen\nTab / arrows   Focus a button · Enter   Select")
+			_text(_content, "WASD / arrows   Walk\nE / Space / Enter   Interact or advance dialogue\nEsc   Back or close the active panel\nP / menu icon   Pause any screen\nTab / arrows   Focus a button · Enter   Select\nM / minimap   Open or close navigation\nMap: scroll to zoom, drag to pan, click to track\nN   Toggle sound")
 			first = _button("Back", _show_page.bind("home"))
 		"tasks":
 			_heading("MISSION LOG")
@@ -144,6 +144,11 @@ func _show_page(page: String) -> void:
 				var done: bool = task["done"]
 				_text(rows, ("%s  %s" % ["DONE" if done else "OPEN", task["title"]]), TEAL if done else AMBER)
 				_text(rows, task["description"])
+				if not done and task.has("destination") and is_instance_valid(MapManager.floor):
+					var track := Button.new()
+					track.text = "Track objective"
+					track.pressed.connect(_track_objective.bind(task))
+					rows.add_child(track)
 			_button("Back", _show_page.bind("home"))
 			scroll.grab_focus()
 		"quit":
@@ -153,6 +158,11 @@ func _show_page(page: String) -> void:
 			_button("Quit to desktop", func() -> void: get_tree().quit())
 	if first != null:
 		first.grab_focus()
+
+
+func _track_objective(task: Dictionary) -> void:
+	_resume()
+	MapManager.set_waypoint(task.facility, task.destination, task.id)
 
 
 func _heading(value: String) -> void:

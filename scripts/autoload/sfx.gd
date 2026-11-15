@@ -1,7 +1,7 @@
 extends Node
 ## Sfx — tiny retro sound effects, generated in code (autoload). No audio files needed.
 ##   Sfx.play(&"confirm")
-## Listens to game signals so most scenes never call it directly. Press M to mute.
+## Listens to game signals so most scenes never call it directly. Press N to mute.
 
 const RATE := 22050
 
