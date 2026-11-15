@@ -156,6 +156,29 @@ func reset_state(start_hour: int, start_battery: float, pattern: Array[float] = 
 	_emit_changed()
 
 
+## Jumps the clock forward without simulating the hours in between (the crew's rest
+## period between work days). Battery and crops are left as they are.
+func skip_to_hour(new_hour: int) -> void:
+	hour = maxi(hour, new_hour)
+	_accum = 0.0
+	last_generation = solar_capacity * illumination_at(hour)
+	last_demand = current_demand()
+	_emit_changed()
+
+
+## Starts the storm-day scorecard: the mission report rates only what happens from here.
+## Battery, crops and science are kept (they carry over from the earlier days).
+func start_rating_window() -> void:
+	battery_min = battery
+	hours_run = 0
+	life_support_ok_hours = 0
+	emergency_shutoffs = 0
+	safety_incidents = 0
+	exposure_log = 0.0
+	history.clear()
+	_emit_changed()
+
+
 ## Everything that changes during a mission, so a day can be replayed exactly.
 func save_state() -> Dictionary:
 	return {

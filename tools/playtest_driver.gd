@@ -264,7 +264,7 @@ func _end_day(next_day: int) -> void:
 	await _press(&"interact")
 	await _wait(2.4)
 	_check(D.day == next_day and not D.power_checked and not D.log_written, "slept into day %d with a fresh task list" % next_day)
-	_check(ResourceSim.hour == hour_before + int(D.config["night_hours"]), "the night is simulated (%d hours)" % int(D.config["night_hours"]))
+	_check(ResourceSim.hour >= hour_before + int(D.config["night_hours"]) and posmod(ResourceSim.hour, ResourceSim.ILLUMINATION_PATTERN.size()) == int(D.config["mission_start_hour"]), "the night is simulated and the morning starts on schedule (hour %d)" % ResourceSim.hour)
 	if next_day == D.FINAL_DAY:
 		_d5 = {"hour": ResourceSim.hour, "battery": ResourceSim.battery, "exposure": ResourceSim.exposure_log}
 	await _shot("day%d_morning" % next_day)

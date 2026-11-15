@@ -14,8 +14,10 @@ extends Node
 ## TIMING MODEL (kept in one place on purpose):
 ##   - Training: the clock runs only while the training panel is open and "Go" is pressed.
 ##   - Outpost routine days: the clock is stopped while you work. Sleeping simulates
-##     the rest of the day and the night in one go (night_hours). Battery, crops and
-##     science carry over from day to day.
+##     night_hours in one go, then skips the crew's rest so every morning starts at
+##     mission_start_hour of the sunlight pattern. Battery, crops and science carry over.
+##   - Day 5 morning starts the storm-day scorecard (ResourceSim.start_rating_window):
+##     the mission report rates the storm day; earlier days shape the battery and crops.
 ##   - Day 5: when its tasks are done a fixed shift (shift_hours_before_alert) is
 ##     simulated in one go, then the alert starts.
 ##   - Alert: one game hour passes every seconds_per_storm_hour of real time, but
@@ -261,10 +263,18 @@ func sleep() -> bool:
 		ResourceSim.advance_hour()
 	if grow and ResourceSim.crop_health > 30.0:
 		ResourceSim.crop_growth += 1
+	# Every morning starts at the same point of the sunlight pattern (the crew's rest
+	# period is skipped, not simulated), so day 5 meets the storm and the ridge shadow
+	# exactly as the original mission did.
+	var period := ResourceSim.ILLUMINATION_PATTERN.size()
+	var morning := int(config["mission_start_hour"])
+	var next := ResourceSim.hour + posmod(morning - ResourceSim.hour, period)
+	ResourceSim.skip_to_hour(next)
 	day += 1
 	tasks_done = {}
 	log_written = false
 	if day == FINAL_DAY:
+		ResourceSim.start_rating_window()
 		_day5_state = ResourceSim.save_state()
 	day_started.emit(day)
 	objectives_changed.emit()
