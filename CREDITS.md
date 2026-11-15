@@ -44,7 +44,7 @@
 - NASA, How NASA Will Protect Astronauts From Space Radiation at the Moon
 
 ## Tools
-- Godot 4.7.2. Code written with Claude.
+- Godot 4.7.2.
 
 ## To confirm with the team
 - Which work done before the event start may be included in the submission.
