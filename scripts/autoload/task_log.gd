@@ -71,7 +71,7 @@ func entries() -> Array[Dictionary]:
 			_add(list, str(task["title"]), str(task["description"]), d.is_task_done(StringName(str(task["id"]))), str(task.get("destination", "")))
 		if d.stage == d.Stage.CHECKS and not d.is_final_day():
 			_add(list, "Write the evening log", "Use the comms desk in the corridor to log what you learned today.", d.log_written, "log")
-			_add(list, "Sleep in your bunk", "Rest in a bunk in the crew quarters to start Day %d." % (d.day + 1), false, "bunk")
+			_add(list, "Sleep in your bunk", "Rest in a sleep pod in the corridor to start Day %d." % (d.day + 1), false, "bunk")
 	if d.stage >= d.Stage.ALERT:
 		var alert_help := "Run north. Hold E to crank the shelter hatch open, then step inside."
 		if d.stage == d.Stage.DEBRIEF and not d.reached_shelter:

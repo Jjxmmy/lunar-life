@@ -357,6 +357,7 @@ def paint_outpost(preview: bool):
     paint_power_room(cv, L, art)
     paint_greenhouse(cv, L, art, rng)
     paint_shelter(cv, L, art)
+    paint_furniture(cv, L, art)
     paint_exterior_after(cv, L, art)
     # Banded pools of light on the floor under the wall lamps.
     for name, tint in (("POWER_ROOM", TEAL), ("GREEN_ROOM", C("f6b7ff")), ("SHELTER_ROOM", AMBER)):
@@ -622,6 +623,99 @@ def paint_greenhouse(cv: Canvas, L: dict, art: dict, rng):
         cv.rect(lx + 1, ry - FACE_H + 5, 10, 1, C("f6b7ff"))
     sx, sy = L["GREEN_SPOT"]
     art["green_spot"] = [sx, sy]
+
+
+def cabinet(cv: Canvas, x, y, w, d, h, body, top=None, edge_c=None):
+    """A box standing on the floor: footprint (x, y, w, d), front face rising h pixels."""
+    top = top if top is not None else shade(body, 1.25)
+    edge_c = edge_c if edge_c is not None else DARK
+    cv.rect(x + 2, y + d, w, 2, DARK, 0.3)                    # contact shadow
+    cv.rect(x - 1, y - h - 1, w + 2, h + d + 2, edge_c)
+    cv.rect(x, y - h, w, 3, top)
+    cv.rect(x, y - h + 3, w, h + d - 3, body)
+    cv.rect(x, y + d - 2, w, 2, shade(body, 0.75))
+
+
+def paint_furniture(cv: Canvas, L: dict, art: dict):
+    """Everyday furniture for the five-day mission. Footprints come from outpost_layout.gd."""
+    # Storage lockers (power room, south wall).
+    x, y, w, d = L["LOCKERS"]
+    cabinet(cv, x, y, w, d, 26, STEEL_LO, STEEL)
+    for i in range(0, w - 4, 13):
+        cv.rect(x + 2 + i, y - 22, 11, d + 18, DARK)
+        cv.rect(x + 3 + i, y - 21, 9, d + 16, C("3e456c"))
+        for k in range(3):
+            cv.hline(x + 5 + i, y - 18 + k * 3, 5, STEEL)
+        cv.px(x + 10 + i, y - 6, AMBER)
+    # Suit rack: two spare suits and helmets.
+    x, y, w, d = L["SUIT_RACK"]
+    cv.rect(x + 2, y + d, w, 2, DARK, 0.3)
+    cv.rect(x, y - 30, 2, d + 30, STEEL_HI)
+    cv.rect(x + w - 2, y - 30, 2, d + 30, STEEL_HI)
+    cv.rect(x, y - 30, w, 2, STEEL_HI)
+    for k, suit in enumerate([C("e9eef7"), C("d9dfec")]):
+        sx = x + 4 + k * 10
+        cv.ellipse(sx + 4, y - 22, 4, 4, suit)
+        cv.ellipse(sx + 4, y - 21, 2.5, 2, C("2f5f8a"))
+        cv.rect(sx, y - 17, 9, 16, suit)
+        cv.rect(sx + 1, y - 13, 7, 2, ORANGE)
+        cv.rect(sx + 1, y - 1, 3, 8, suit)
+        cv.rect(sx + 5, y - 1, 3, 8, suit)
+    # Comms desk: two screens and a microphone (corridor, west wall). Evening logs are written here.
+    x, y, w, d = L["COMMS_DESK"]
+    cabinet(cv, x, y, w, d, 8, C("4b5278"), STEEL)
+    screen(cv, x + 1, y - 18, w - 2, 9, TEAL)
+    screen(cv, x + 1, y + 4, w - 2, 9, AMBER)
+    cv.rect(x + w - 3, y + d - 8, 2, 6, STEEL_HI)
+    art["comms_desk"] = [x, y, w, d]
+    # Sleep pods: phone-booth crew quarters like the space station's, with a curtain and a reading light.
+    for name in ("SLEEP_POD_A", "SLEEP_POD_B"):
+        x, y, w, d = L[name]
+        cabinet(cv, x, y, w, d, 22, C("3a3f66"), C("5a608e"))
+        cv.rect(x + 3, y - 16, w - 6, d + 12, C("232847"))
+        cv.rect(x + 4, y - 15, w - 8, d + 10, C("5a4d7d"))                  # curtain
+        for k in range(y - 14, y + d - 4, 4):
+            cv.hline(x + 4, k, w - 8, C("4a3f6c"))
+        cv.rect(x + 5, y - 19, 3, 2, AMBER)                                   # reading light
+        cv.rect(x + w - 9, y - 19, 4, 2, TEAL_LO)                             # name tag
+    # Plant shelf: herbs in small trays (greenhouse, east wall).
+    x, y, w, d = L["PLANT_SHELF"]
+    cabinet(cv, x, y, w, d, 20, C("6b5a4e"), C("8a7565"))
+    for k in range(4):
+        sy = y - 16 + k * 11
+        cv.hline(x, sy + 6, w, C("4d4038"))
+        cv.rect(x + 2, sy + 2, w - 4, 4, GREEN_LO)
+        cv.px(x + 3, sy + 1, GREEN)
+        cv.px(x + w - 4, sy + 1, GREEN)
+    # Galley table with meal trays (storm shelter doubles as the galley).
+    x, y, w, d = L["GALLEY_TABLE"]
+    cabinet(cv, x, y, w, d, 6, C("6b5a4e"), C("8a7565"))
+    for k in range(3):
+        cv.rect(x + 4 + k * 11, y - 4, 8, 5, C("d9dfec"))
+        cv.rect(x + 6 + k * 11, y - 3, 4, 2, [GREEN, ORANGE, AMBER][k])
+    # Med bay cot with a first-aid cabinet.
+    x, y, w, d = L["MED_COT"]
+    cabinet(cv, x, y, w, d, 5, STEEL_LO, STEEL)
+    cv.rect(x + 2, y - 4, w - 4, d, C("e9eef7"))
+    cv.rect(x + 2, y - 4, 7, d, C("c9d0e2"))
+    cv.rect(x + w - 8, y - 18, 7, 7, C("e9eef7"))
+    cv.rect(x + w - 6, y - 17, 3, 5, RED)
+    cv.rect(x + w - 7, y - 16, 5, 3, RED)
+    # Exercise bike.
+    x, y, w, d = L["BIKE"]
+    cv.rect(x + 2, y + d, w, 2, DARK, 0.3)
+    cv.rect(x + 2, y + d - 4, w - 4, 3, C("5b6584"))
+    cv.ellipse(x + 8, y + d - 7, 5, 5, C("8a93b0"))
+    cv.ellipse(x + 8, y + d - 7, 2, 2, DARK)
+    cv.rect(x + w - 10, y - 6, 3, d + 2, STEEL_HI)
+    cv.rect(x + w - 14, y - 8, 10, 3, C("2a2f45"))
+    cv.rect(x + 6, y - 2, 8, 3, C("2a2f45"))
+    screen(cv, x + w - 12, y - 16, 9, 6, TEAL)
+    # Cable trays along the corridor ceiling line (decoration only).
+    cx, cy, cw, ch = L["CORRIDOR"]
+    for k in range(cy + 6, cy + ch - 10, 6):
+        cv.px(cx + 2, k, TEAL_LO if (k // 6) % 3 == 0 else STEEL_LO)
+        cv.px(cx + cw - 3, k, AMBER_LO if (k // 6) % 4 == 0 else STEEL_LO)
 
 
 def paint_shelter(cv: Canvas, L: dict, art: dict):

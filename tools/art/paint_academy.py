@@ -394,6 +394,48 @@ def paint_academy(preview: bool):
         cv.rect(ox + 4, ly + 3, 12, 2, C("e9eef7"))
     cv.rect(lx, ly + ld - 3, lw, 3, pw.STEEL_LO)
 
+    # --- robotics trainer: a small arm on a pedestal with its control desk -------------
+    ax, ay, aw, ad = L["ARM_TRAINER"]
+    cv.rect(ax + 2, ay + ad, aw, 2, EDGE, 0.3)
+    cv.rect(ax - 1, ay - 10, aw + 2, ad + 11, EDGE)
+    cv.rect(ax, ay - 9, aw, 4, pw.STEEL_HI)
+    cv.rect(ax, ay - 5, aw, ad + 4, pw.STEEL_LO)
+    cv.rect(ax + 4, ay - 30, 6, 22, pw.STEEL)                              # pedestal
+    cv.rect(ax + 6, ay - 44, 3, 16, C("e9eef7"))                           # arm boom
+    cv.rect(ax + 8, ay - 46, 18, 3, C("e9eef7"))
+    cv.rect(ax + 24, ay - 46, 4, 8, C("e9eef7"))
+    cv.rect(ax + 23, ay - 38, 6, 3, pw.AMBER)                              # grapple
+    monitor(cv, ax + aw - 18, ay - 22, 16, 11, pw.TEAL)
+    for i in range(4):
+        cv.rect(ax + 14 + i * 6, ay - 3, 4, 2, pw.AMBER if i % 2 else pw.TEAL)
+    pw.hazard(cv, ax, ay + ad, aw, 3, pw.AMBER, EDGE, 3)
+
+    # --- suit rack by the lander dock ----------------------------------------------------
+    sx, sy, sw, sd = L["SUIT_RACK"]
+    cv.rect(sx + 2, sy + sd, sw, 2, EDGE, 0.3)
+    cv.rect(sx, sy - 34, 2, sd + 34, pw.STEEL_HI)
+    cv.rect(sx + sw - 2, sy - 34, 2, sd + 34, pw.STEEL_HI)
+    cv.rect(sx, sy - 34, sw, 2, pw.STEEL_HI)
+    for k in range(2):
+        ox = sx + 4 + k * 12
+        cv.ellipse(ox + 5, sy - 26, 4.5, 4.5, C("e9eef7"))
+        cv.ellipse(ox + 5, sy - 25, 3, 2, C("2f5f8a"))
+        cv.rect(ox, sy - 21, 11, 22, C("e9eef7"))
+        cv.rect(ox + 1, sy - 16, 9, 2, C("e37a40"))
+        cv.rect(ox + 1, sy + 1, 4, 12, C("e9eef7"))
+        cv.rect(ox + 6, sy + 1, 4, 12, C("e9eef7"))
+
+    # --- crew study table with tablets -------------------------------------------------
+    tx, ty, tw, td = L["CREW_TABLE"]
+    cv.rect(tx + 2, ty + td, tw, 2, EDGE, 0.3)
+    cv.rect(tx - 1, ty - 7, tw + 2, td + 8, EDGE)
+    cv.rect(tx, ty - 6, tw, td + 2, WOOD)
+    cv.rect(tx, ty - 6, tw, 2, shade(WOOD, 1.25))
+    cv.rect(tx, ty + td - 3, tw, 3, shade(WOOD, 0.75))
+    for i in range(3):
+        cv.rect(tx + 5 + i * 15, ty - 2, 9, 6, EDGE)
+        cv.rect(tx + 6 + i * 15, ty - 1, 7, 4, [pw.TEAL_LO, VIOLET, pw.AMBER_LO][i])
+
     # --- pools of light ------------------------------------------------------------------
     floor_mask = cv.rect_mask(fx, fy, fw, fh)
     for lx_, tint in ((252, pw.AMBER), (438, pw.AMBER), (654, pw.TEAL), (118, VIOLET)):

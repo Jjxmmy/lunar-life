@@ -36,6 +36,15 @@ const BENCH_WEST := Rect2(168, 54, 44, 10)
 const BENCH_EAST := Rect2(268, 54, 44, 10)
 ## Exercise bike in the power room (Day 2 crew health check).
 const BIKE := Rect2(112, 246, 26, 14)
+# Furniture added for the five-day mission (painted by tools/art/paint_world.py).
+const LOCKERS := Rect2(66, 254, 38, 14)
+const SUIT_RACK := Rect2(150, 236, 24, 28)
+const COMMS_DESK := Rect2(204, 158, 12, 30)
+const SLEEP_POD_A := Rect2(260, 146, 16, 32)
+const SLEEP_POD_B := Rect2(260, 240, 16, 30)
+const PLANT_SHELF := Rect2(442, 228, 10, 32)
+const GALLEY_TABLE := Rect2(222, 66, 36, 12)
+const MED_COT := Rect2(164, 94, 30, 12)
 
 # --- Places (feet positions) ---
 const POWER_SPOT := Vector2(138, 180)
@@ -45,8 +54,8 @@ const SPAWN := Vector2(240, 248)
 const RETURN_SPOT := Vector2(240, 272)
 const ROVER_SPOT := Vector2(96, 290)
 ## Evening log at the comms desk (corridor, west side) and the bunk you sleep in.
-const LOG_SPOT := Vector2(216, 176)
-const BUNK_SPOT := Vector2(338, 208)
+const LOG_SPOT := Vector2(226, 174)
+const BUNK_SPOT := Vector2(248, 166)
 const BIKE_SPOT := Vector2(125, 236)
 
 # --- Crew: where they work, where they wait at the hatch, where they sit out the storm ---
@@ -72,7 +81,8 @@ static func beds() -> Array[Rect2]:
 
 
 static func blockers() -> Array[Rect2]:
-	return [BATTERY_BANK, POWER_CONSOLE, CRATES, WORKBENCH, BED_A, BED_B, BED_C, BED_D, WATER_TANK, BENCH_WEST, BENCH_EAST, BIKE]
+	return [BATTERY_BANK, POWER_CONSOLE, CRATES, WORKBENCH, BED_A, BED_B, BED_C, BED_D, WATER_TANK, BENCH_WEST, BENCH_EAST, BIKE,
+		LOCKERS, SUIT_RACK, COMMS_DESK, SLEEP_POD_A, SLEEP_POD_B, PLANT_SHELF, GALLEY_TABLE, MED_COT]
 
 
 ## Map units -> world pixels.

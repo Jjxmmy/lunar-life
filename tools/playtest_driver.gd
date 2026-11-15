@@ -165,8 +165,8 @@ const SPOTS := {
 	"crops": [Vector2(290, 212), Vector2(378, 212), Vector2(378, 196)],
 	"tanaka": [Vector2(290, 212), Vector2(378, 212), Vector2(416, 212)],
 	"bike": [Vector2(150, 212), Vector2(125, 228)],
-	"log": [Vector2(222, 188)],
-	"bunk": [Vector2(290, 212), Vector2(338, 214)],
+	"log": [Vector2(228, 186)],
+	"bunk": [Vector2(246, 178)],
 	"shelter": [Vector2(240, 140)],
 }
 

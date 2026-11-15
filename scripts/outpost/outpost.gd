@@ -141,7 +141,7 @@ func _add_navigation(player: Node2D) -> void:
 	nav.add_point("crops", "East greenhouse", "Crops", "Set the grow-light power plan.", "station", OutpostLayout.px(OutpostLayout.GREEN_SPOT))
 	nav.add_point("bike", "Exercise bike", "Bike", "Daily exercise keeps bones and muscles strong.", "station", OutpostLayout.px(OutpostLayout.BIKE_SPOT))
 	nav.add_point("log", "Comms desk", "Log", "Write the evening log.", "station", OutpostLayout.px(OutpostLayout.LOG_SPOT))
-	nav.add_point("bunk", "Crew bunks", "Bunk", "Sleep to start the next day.", "station", OutpostLayout.px(OutpostLayout.BUNK_SPOT))
+	nav.add_point("bunk", "Sleep pods", "Sleep", "Sleep to start the next day.", "station", OutpostLayout.px(OutpostLayout.BUNK_SPOT))
 	nav.add_point("shelter", "Storm shelter hatch", "Shelter", "Hold E to open the hatch, then step inside.", "hatch", OutpostLayout.px(OutpostLayout.HATCH_SPOT + Vector2(0, 16)))
 	nav.add_point("rivera", "Engineer Rivera", "Rivera", "Ask Rivera about outpost power.", "crew", _rivera.position, _rivera)
 	nav.add_point("tanaka", "Dr. Tanaka", "Tanaka", "Ask Tanaka about the greenhouse.", "crew", _tanaka.position, _tanaka)
@@ -774,12 +774,6 @@ func _draw() -> void:
 		var bar_h := maxf(1.0, roundf(level * (rad.size.y - 4.0)))
 		draw_rect(Rect2(rad.position.x + 3 + i * 3, rad.end.y - 1 - bar_h, 2, bar_h), color)
 
-	# --- Exercise bike (until the painter adds it to the background).
-	var bike := OutpostLayout.px_rect(OutpostLayout.BIKE)
-	draw_rect(Rect2(bike.position + Vector2(2, bike.size.y - 6), Vector2(bike.size.x - 4, 3)), Color("5b6584"))
-	draw_circle(bike.position + Vector2(9, bike.size.y - 7), 5.0, Color("8a93b0"))
-	draw_rect(Rect2(bike.position + Vector2(bike.size.x - 12, 2), Vector2(3, bike.size.y - 8)), Color("8a93b0"))
-	draw_rect(Rect2(bike.position + Vector2(bike.size.x - 16, 1), Vector2(10, 3)), Color("2a2f45"))
 	# --- Station markers: a pulsing ring until the check is done, then a quiet tick.
 	_marker(OutpostLayout.px(OutpostLayout.POWER_SPOT), d.power_checked, C_TEAL)
 	_marker(OutpostLayout.px(OutpostLayout.GREEN_SPOT), d.greenhouse_checked, C_GREEN)

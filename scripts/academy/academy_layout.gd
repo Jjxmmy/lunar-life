@@ -26,6 +26,8 @@ const LOUNGE_TABLE := Rect2(362, 360, 44, 24)
 const LOCKERS := Rect2(590, 326, 96, 24)
 ## Robotics trainer: a small arm on a pedestal with its control desk (Day 1 arm drill).
 const ARM_TRAINER := Rect2(600, 200, 44, 24)
+const SUIT_RACK := Rect2(716, 180, 30, 40)
+const CREW_TABLE := Rect2(180, 200, 50, 24)
 
 # --- Things on the back wall (no footprint) ---
 const BOARD := Rect2(268, 18, 74, 52)
@@ -47,4 +49,4 @@ const ARM_SPOT := Vector2(622, 238)
 
 static func blockers() -> Array[Rect2]:
 	return [WEATHER_DESK, SERVER_RACK, PLANTER_WEST, PLANTER_EAST, BATTERY_RACK, TRAINING_CONSOLE,
-		HOLO_TABLE, PLANT_BENCH, SOFA_WEST, SOFA_EAST, LOUNGE_TABLE, LOCKERS, ARM_TRAINER]
+		HOLO_TABLE, PLANT_BENCH, SOFA_WEST, SOFA_EAST, LOUNGE_TABLE, LOCKERS, ARM_TRAINER, SUIT_RACK, CREW_TABLE]
