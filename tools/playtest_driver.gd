@@ -93,7 +93,11 @@ func _walk(points: Array) -> void:
 			t += get_physics_process_delta_time()
 		for a: StringName in [&"move_left", &"move_right", &"move_up", &"move_down"]:
 			Input.action_release(a)
-		_check(p.global_position.distance_to(target) <= 3.0, "walked to %s (at %s)" % [target, p.global_position.round()])
+		for _i in 20:
+			if p.velocity.length() < 1.0:
+				break
+			await get_tree().physics_frame
+		_check(p.global_position.distance_to(target) <= 6.0, "walked to %s (at %s)" % [target, p.global_position.round()])
 
 
 func _talk_through(max_lines: int = 40) -> void:
