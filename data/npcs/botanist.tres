@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NPCData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/npc_data.gd" id="1_npc"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/npc_botanist.png" id="2_tex"]
+
+[resource]
+script = ExtResource("1_npc")
+id = &"botanist"
+display_name = "Dr. Tanaka"
+role = "Space Botanist"
+sprite = ExtResource("2_tex")
+lines = PackedStringArray("Astronauts have grown red romaine lettuce on the International Space Station.", "Plants need grow lights, which use power. Conservation mode saves energy but slows growth.", "Plants provide food; machines keep the habitat air safe.")
+opens_scene = &""

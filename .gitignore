@@ -1,3 +1,6 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+setup_spritecook.command
+
+.DS_Store
