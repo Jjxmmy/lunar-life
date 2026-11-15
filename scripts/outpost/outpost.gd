@@ -517,12 +517,25 @@ func _alert_sequence() -> void:
 	await EventBus.dialogue_ended
 	MissionDirector.start_alert()
 	FieldNotes.unlock(&"sep")
+	# Short danger briefing first. The storm clock is stopped while it plays.
+	MissionDirector.push_ui()
+	var layer := CanvasLayer.new()
+	layer.layer = 45
+	add_child(layer)
+	var briefing := Control.new()
+	briefing.name = "StormBriefing"
+	briefing.set_script(load("res://scripts/ui/mission_cinematic.gd"))
+	briefing.set(&"mode", "storm")
+	layer.add_child(briefing)
+	await briefing.finished
+	layer.queue_free()
+	MissionDirector.pop_ui()
+	FieldNotes.unlock(&"shields")
 	var first := "RADIATION ALERT! Training scenario: this solar particle event is fictional."
 	if MissionDirector.sep_is_real:
-		first = "RADIATION ALERT! NASA logged a solar particle event on %s. We are replaying that real record." % MissionDirector.sep_time_text()
+		first = "RADIATION ALERT! We are replaying the real event NASA logged on %s." % MissionDirector.sep_time_text()
 	Dialogue.play(&"alert", "Mission Control", PackedStringArray([
 		first,
-		"Fast particles from the Sun can harm people. The Moon has no thick air or global magnetic field to stop them.",
 		"Run NORTH to the storm shelter. Hold E to crank the hatch open, then get inside. The storm clock is running!"]))
 
 

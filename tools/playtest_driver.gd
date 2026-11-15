@@ -542,7 +542,22 @@ func _run() -> void:
 	if Dialogue.is_revealing():
 		await _press(&"interact")
 	await _press(&"interact")
-	await _wait(0.3)
+	await _wait(0.6)
+	var briefing := get_tree().current_scene.find_child("StormBriefing", true, false)
+	_check(D.stage == D.Stage.ALERT and briefing != null and D.ui_open, "the alert opens with the storm danger briefing")
+	var storm_hours := D.storm_hours_done
+	var seen := 0
+	for i in 12:
+		if not is_instance_valid(briefing) or briefing.is_queued_for_deletion():
+			break
+		if int(briefing.get("slide")) == seen:
+			await _wait(0.4)
+			await _shot("10a_storm_briefing_%d" % seen)
+			seen += 1
+		await _press(&"interact")
+		await _wait(0.2)
+	await _wait(0.6)
+	_check(seen == 4 and D.storm_hours_done == storm_hours, "the briefing shows 4 slides and the storm clock waits for it")
 	_check(D.stage == D.Stage.ALERT and Dialogue.is_active, "alert started, Mission Control speaks")
 	_check(D.day == D.FINAL_DAY and ResourceSim.hour == _alert_hour + int(D.config["shift_hours_before_alert"]) and ResourceSim.sep_active, "day 5: alert begins after the shift with the SEP active (hour %d)" % ResourceSim.hour)
 	await _shot("10_alert_dialogue")

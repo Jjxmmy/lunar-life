@@ -6,6 +6,10 @@ extends Control
 ## Esc skips the whole intro. Emits `finished` when it is over.
 ##
 ## The pictures are drawn in code with whole pixels at 480 x 270.
+##
+## mode = "storm" plays the short Day 5 danger briefing instead (under 30 seconds):
+## what a solar particle event is, why the Moon is exposed, why mass protects, and how
+## warnings work - keeping the honest framing that DONKI records events near Earth.
 
 signal finished
 
@@ -27,6 +31,24 @@ const SLIDES: Array[Dictionary] = [
 		"text": "Train at the academy. Keep the power on, keep the crops alive, and get the crew into the storm shelter in time.",
 	},
 ]
+const STORM_SLIDES: Array[Dictionary] = [
+	{
+		"title": "SOLAR PARTICLE EVENT",
+		"text": "A big eruption on the Sun has flung protons out at close to the speed of light. NASA calls this a solar particle event.",
+	},
+	{
+		"title": "NO SHIELD ON THE MOON",
+		"text": "On Earth, the magnetic field and thick air stop most of these particles. The Moon has no global magnetic field and almost no air.",
+	},
+	{
+		"title": "MASS IS PROTECTION",
+		"text": "Particles slow down and stop inside matter. Thick walls, water tanks and piled regolith between you and the Sun cut the dose a lot.",
+	},
+	{
+		"title": "GET TO THE SHELTER",
+		"text": "Forecasters watch flares and eruptions in NASA's DONKI. This alert replays a real record from near Earth, not a dose measured on the Moon. Go!",
+	},
+]
 const CHARS_PER_SECOND := 55.0
 const SKY := Color("070b1c")
 const MOON := Color("77778f")
@@ -34,6 +56,9 @@ const MOON_DARK := Color("55546e")
 const MOON_LIGHT := Color("9a99b0")
 
 var slide: int = 0
+## "intro" (opening story) or "storm" (Day 5 danger briefing).
+var mode: String = "intro"
+var _slides: Array[Dictionary] = SLIDES
 
 var _time: float = 0.0
 var _slide_time: float = 0.0
@@ -51,6 +76,8 @@ var _cast: Array[TextureRect] = []
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	if mode == "storm":
+		_slides = STORM_SLIDES
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 2024
 	for i in 90:
@@ -81,12 +108,12 @@ func _show_slide(index: int) -> void:
 	slide = index
 	_slide_time = 0.0
 	_reveal = 0.0
-	_text = str(SLIDES[slide]["text"]).replace("{name}", GameState.player_name)
+	_text = str(_slides[slide]["text"]).replace("{name}", GameState.player_name)
 	_lines = _wrap(_text, 440.0)
 	_text = "\n".join(_lines)
 	for rect in _cast:
-		rect.visible = slide == 3
-	if slide == 2:
+		rect.visible = slide == 3 and mode == "intro"
+	if (slide == 2 and mode == "intro") or (slide == 0 and mode == "storm"):
 		Sfx.play(&"alert")
 
 
@@ -130,7 +157,7 @@ func advance() -> void:
 		_reveal = float(_text.length())
 		return
 	Sfx.play(&"next")
-	if slide + 1 >= SLIDES.size():
+	if slide + 1 >= _slides.size():
 		_finish()
 	else:
 		_show_slide(slide + 1)
@@ -169,11 +196,18 @@ func _draw() -> void:
 		var star := _stars[i]
 		var twinkle := 0.35 + 0.6 * absf(sin(_time * star.z + float(i)))
 		draw_rect(Rect2(star.x, star.y, 1, 1), Color(0.8, 0.9, 1.0, twinkle))
-	match slide:
-		0: _draw_destination()
-		1: _draw_power()
-		2: _draw_weather()
-		_: _draw_mission()
+	if mode == "storm":
+		match slide:
+			0: _draw_weather()
+			1: _draw_shields()
+			2: _draw_mass()
+			_: _draw_warning()
+	else:
+		match slide:
+			0: _draw_destination()
+			1: _draw_power()
+			2: _draw_weather()
+			_: _draw_mission()
 	# A quick fade at the start of each slide.
 	var veil := clampf(1.0 - _slide_time / 0.25, 0.0, 1.0)
 	if veil > 0.0:
@@ -185,7 +219,7 @@ func _draw_caption() -> void:
 	var box := Rect2(10, 198, 460, 64)
 	draw_rect(box, Color(UiKit.PANEL, 0.97))
 	draw_rect(box, UiKit.TEAL, false, 1.0)
-	UiKit.draw_text(self, box.position + Vector2(9, 15), str(SLIDES[slide]["title"]), "title", UiKit.AMBER)
+	UiKit.draw_text(self, box.position + Vector2(9, 15), str(_slides[slide]["title"]), "title", UiKit.AMBER)
 	# Typed caption. Lines were broken up front, so the text only ever grows.
 	var left := int(_reveal)
 	for i in _lines.size():
@@ -195,21 +229,91 @@ func _draw_caption() -> void:
 		UiKit.draw_text(self, box.position + Vector2(9, 30 + i * 12), line.substr(0, left), "body", UiKit.TEXT)
 		left -= line.length() + 1
 	# Progress dots.
-	for i in SLIDES.size():
-		var dot := Rect2(box.end.x - 12 - (SLIDES.size() - i) * 8, box.position.y + 8, 5, 5)
+	for i in _slides.size():
+		var dot := Rect2(box.end.x - 12 - (_slides.size() - i) * 8, box.position.y + 8, 5, 5)
 		draw_rect(dot, UiKit.AMBER if i == slide else UiKit.LINE)
 	# Prompts.
-	UiKit.draw_text(self, Vector2(box.position.x + 9, box.end.y - 5), "Esc: skip intro", "small", UiKit.TEXT_DIM)
+	UiKit.draw_text(self, Vector2(box.position.x + 9, box.end.y - 5), "Esc: skip" if mode == "storm" else "Esc: skip intro", "small", UiKit.TEXT_DIM)
 	var ready_to_turn := not is_typing()
 	var color := UiKit.AMBER if ready_to_turn else UiKit.AMBER_DIM
 	var bounce := roundf(absf(sin(_time * 5.0)) * 2.0) if ready_to_turn else 0.0
-	var words := "Next" if slide + 1 < SLIDES.size() else "Begin"
+	var words := "Next" if slide + 1 < _slides.size() else "Begin"
 	var at := Vector2(box.end.x - 60, box.end.y - 14)
 	draw_rect(Rect2(at, Vector2(9, 9)), color)
 	draw_string(UiKit.font_small, at + Vector2(2, 7), "E", HORIZONTAL_ALIGNMENT_LEFT, -1, UiKit.SIZE_SMALL, UiKit.INK)
 	UiKit.draw_text(self, at + Vector2(13, 8), words, "small", color)
 	var tip := at + Vector2(42 + bounce, 4.5)
 	draw_colored_polygon(PackedVector2Array([tip + Vector2(0, -4), tip + Vector2(5, 0), tip + Vector2(0, 4)]), color)
+
+
+# ---------------------------------------------------------------- storm briefing pictures
+
+## Particles stream in from the left: Earth's field bends them away, the Moon takes them.
+func _draw_shields() -> void:
+	var earth := Vector2(130, 100)
+	var moon := Vector2(360, 108)
+	_ellipse(earth, 26, 26, Color("2f6fd0"))
+	_ellipse(earth + Vector2(-6, -5), 9, 7, Color("4fae5a"))
+	_ellipse(earth + Vector2(9, 8), 7, 5, Color("4fae5a"))
+	for r in [40.0, 54.0]:
+		draw_arc(earth, r, PI * 0.55, PI * 1.45, 24, Color(UiKit.TEAL, 0.55), 1.0)
+	_ellipse(moon, 18, 18, MOON)
+	_ellipse(moon + Vector2(-5, -4), 4, 3, MOON_DARK)
+	for i in 9:
+		var y := 40.0 + i * 14.0
+		var head := fmod(_time * 120.0 + i * 37.0, 150.0)
+		# Toward Earth: curve away at the field.
+		var start := Vector2(earth.x - 120 + head * 0.5, y)
+		if start.x < earth.x - 58:
+			draw_line(start, start + Vector2(8, 0), Color(1.0, 0.86, 0.5, 0.8), 1.0)
+		else:
+			draw_line(start, start + Vector2(4, -6 if y < earth.y else 6), Color(1.0, 0.86, 0.5, 0.5), 1.0)
+		# Toward the Moon: straight in.
+		var mx := moon.x - 110 + head * 0.6
+		if mx < moon.x - 14:
+			draw_line(Vector2(mx, y + 8), Vector2(mx + 8, y + 8), Color(1.0, 0.86, 0.5, 0.85), 1.0)
+	UiKit.draw_text(self, Vector2(95, 178), "EARTH: shielded", "small", UiKit.TEAL)
+	UiKit.draw_text(self, Vector2(322, 178), "MOON: exposed", "small", UiKit.AMBER)
+
+
+## A shelter with thick walls: particles stop inside the wall, the crew stays safe.
+func _draw_mass() -> void:
+	_moon_ground(150)
+	var wall := Rect2(250, 70, 150, 80)
+	draw_rect(wall, Color("5b6584"))
+	draw_rect(wall.grow(-12), Color("1a2140"))
+	draw_rect(Rect2(wall.position + Vector2(12, 12), Vector2(wall.size.x - 24, 6)), Color("3a6fd0"))  # water tank lining
+	for k in 3:
+		var fx := wall.position.x + 40 + k * 26
+		draw_rect(Rect2(fx, wall.end.y - 30, 6, 12), Color("e8ecf5"))
+		draw_rect(Rect2(fx, wall.end.y - 36, 6, 6), Color("ffd0a0"))
+	for i in 10:
+		var y := 60.0 + i * 9.0
+		var x := fmod(_time * 140.0 + i * 41.0, 210.0) + 30.0
+		var stop := wall.position.x + 6.0
+		if x < stop:
+			draw_line(Vector2(x, y), Vector2(x + 8, y), Color(1.0, 0.86, 0.5, 0.85), 1.0)
+		else:
+			draw_rect(Rect2(stop + float(i % 3), y, 2, 1), Color(1.0, 0.86, 0.5, 0.5))
+	UiKit.draw_text(self, Vector2(250, 64), "walls + water + regolith", "small", UiKit.TEXT)
+
+
+## A forecaster's screen: events in the feed, then the alert.
+func _draw_warning() -> void:
+	var screen := Rect2(110, 30, 260, 140)
+	draw_rect(screen, Color("0a0f22"))
+	draw_rect(screen, UiKit.TEAL, false, 1.0)
+	UiKit.draw_text(self, screen.position + Vector2(8, 14), "SPACE WEATHER FEED", "small", UiKit.TEAL)
+	var rows := ["FLARE   strong", "CME     fast, Earth-facing", "SEP     particles rising"]
+	var shown := mini(rows.size(), int(_slide_time * 1.6) + 1)
+	for i in shown:
+		UiKit.draw_text(self, screen.position + Vector2(10, 34 + i * 16), rows[i], "small", UiKit.AMBER if i == 2 else UiKit.TEXT)
+	if MissionDirector.sep_is_real:
+		UiKit.draw_text(self, screen.position + Vector2(10, 90), "Record: " + MissionDirector.sep_event_id(), "small", UiKit.TEXT_DIM)
+	if int(_time * 3.0) % 2 == 0:
+		var alert := Rect2(screen.position.x + 60, screen.end.y - 30, 140, 18)
+		draw_rect(alert, Color("ff6b5e"))
+		UiKit.draw_text(self, alert.position + Vector2(14, 13), "RADIATION ALERT", "small", UiKit.INK)
 
 
 func _moon_ground(top: float) -> void:
