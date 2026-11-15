@@ -138,7 +138,7 @@ func _draw_flash() -> void:
 	var c := _canvas
 	var alpha := clampf(_flash_left / 0.35, 0.0, 1.0) * clampf((1.9 - _flash_left) / 0.12, 0.0, 1.0)
 	var w := UiKit.text_width(_flash_text, "title") + 22.0
-	var box := Rect2(roundf((480.0 - w) / 2.0), 64, w, 20)
+	var box := Rect2(roundf((480.0 - w) / 2.0), 76, w, 20)
 	c.draw_rect(box, Color(UiKit.INK, 0.9 * alpha))
 	c.draw_rect(box, Color(_flash_color, alpha), false, 1.0)
 	c.draw_rect(Rect2(box.position + Vector2(3, 3), Vector2(2, 14)), Color(_flash_color, alpha))

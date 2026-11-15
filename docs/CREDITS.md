@@ -43,6 +43,23 @@
 - NASA, How NASA Tracked the Most Intense Solar Storm in Decades
 - NASA, How NASA Will Protect Astronauts From Space Radiation at the Moon
 
+## Five-day mission facts (activities in `data/learning/activities.json` and the new field notes)
+- NASA, Become an Astronaut (requirements): https://www.nasa.gov/humans-in-space/astronauts/become-an-astronaut
+- NASA, Astronaut Candidates Get to Work at Johnson Space Center (NBL, T-38, Canadarm2, survival, geology)
+- NASA Johnson Space Center, Training for Space fact sheet (Neutral Buoyancy Laboratory: 6.2 million gallons):
+  https://www.nasa.gov/wp-content/uploads/2015/10/160410main_space_training_fact_sheet.pdf
+- NASA, Counteracting Bone and Muscle Loss in Microgravity (2023): about two hours of exercise a day;
+  bone loss of about 1 to 1.5 percent per month in weight-bearing bones (also reported by NASA research summaries)
+- NASA Kennedy Space Center, Veggie; Veg-01 reports of 10 August 2015 ("Outredgeous" red romaine, 33 days of growth,
+  plant pillows, red/blue/green LEDs): e.g. https://www.livescience.com/51811-astronauts-eat-space-lettuce.html
+- Paul, A.-L. et al. (2022), Plants grown in Apollo lunar regolith present stress-associated transcriptomes,
+  Communications Biology 5, 382 (NASA-funded): https://www.nature.com/articles/s42003-022-03334-8
+- NASA Science, To Protect Artemis II Astronauts, NASA Experts Keep Eyes on Sun (solar particle events,
+  shielding is about mass): https://science.nasa.gov/missions/artemis/artemis-2/to-protect-artemis-ii-astronauts-nasa-experts-keep-eyes-on-sun/
+- ESA, Protecting Artemis and lunar explorers from space radiation (the Moon has no magnetosphere)
+- Simplified in the game: the light-recipe growth heights, crop health, and how much partial gravity protects
+  bones (still being studied). The facts above are real; the numbers in play are game units.
+
 ## Tools
 - Godot 4.7.2.
 

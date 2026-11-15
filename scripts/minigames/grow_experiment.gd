@@ -75,7 +75,7 @@ func _draw_trays() -> void:
 	for i in TRAYS.size():
 		var tray: Array = TRAYS[i]
 		var x := frame.position.x + 22 + i * 100
-		var floor_y := frame.end.y - 44
+		var floor_y := frame.end.y - 54
 		# LED bar above the tray.
 		var leds: Array = tray[1]
 		for k in 8:
