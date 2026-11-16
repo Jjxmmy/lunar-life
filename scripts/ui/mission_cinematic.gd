@@ -42,7 +42,7 @@ const STORM_SLIDES: Array[Dictionary] = [
 	},
 	{
 		"title": "MASS IS PROTECTION",
-		"text": "Particles slow down and stop inside matter. Thick walls, water tanks and piled regolith between you and the Sun cut the dose a lot.",
+		"text": "Stuff stops particles! A metal wall, a water tank and a pile of regolith (moon dust) catch them before they reach the crew.",
 	},
 	{
 		"title": "GET TO THE SHELTER",
@@ -276,26 +276,82 @@ func _draw_shields() -> void:
 	UiKit.draw_text(self, Vector2(322, 178), "MOON: exposed", "small", UiKit.AMBER)
 
 
-## A shelter with thick walls: particles stop inside the wall, the crew stays safe.
+## A cut-away storm shelter: particles from the Sun stop inside the regolith and the water,
+## and the crew inside stays safe. Every layer is labelled so the picture explains itself.
 func _draw_mass() -> void:
 	_moon_ground(150)
-	var wall := Rect2(250, 70, 150, 80)
+	var spark := Color(1.0, 0.86, 0.5)
+	# The Sun, round and glowing, on the left.
+	var sun := Vector2(30, 92)
+	for r in [26.0, 20.0, 15.0]:
+		draw_circle(sun, r, Color(1.0, 0.75, 0.3, 0.10 if r > 20.0 else 0.22))
+	draw_circle(sun, 11.0, Color("ffc45e"))
+	draw_circle(sun, 7.0, Color("fff1c4"))
+	UiKit.draw_text(self, Vector2(16, 128), "SUN", "small", UiKit.AMBER)
+	UiKit.draw_text(self, Vector2(64, 50), "fast particles", "small", UiKit.AMBER)
+
+	# Layer 1: regolith (moon dust) piled over the shelter, drawn as a bumpy mound.
+	var berm := Rect2(226, 70, 228, 80)
+	draw_rect(Rect2(berm.position + Vector2(10, 0), Vector2(berm.size.x - 20, berm.size.y)), MOON_DARK)
+	draw_rect(Rect2(berm.position + Vector2(0, 12), Vector2(berm.size.x, berm.size.y - 12)), MOON_DARK)
+	for k in 22:
+		var px := berm.position.x + 6 + (k * 37) % int(berm.size.x - 12)
+		var py := berm.position.y + 4 + (k * 23) % 70
+		draw_rect(Rect2(px, py, 2 + k % 2, 2), MOON_LIGHT if k % 3 == 0 else MOON)
+	# Layer 2: metal wall.
+	var wall := Rect2(248, 88, 184, 62)
 	draw_rect(wall, Color("5b6584"))
-	draw_rect(wall.grow(-12), Color("1a2140"))
-	draw_rect(Rect2(wall.position + Vector2(12, 12), Vector2(wall.size.x - 24, 6)), Color("3a6fd0"))  # water tank lining
+	for k in 9:
+		draw_rect(Rect2(wall.position.x + 6 + k * 21, wall.position.y + 3, 2, 2), Color("8a93b2"))
+	# Layer 3: water tank lining, with a little wave on top.
+	var water := Rect2(256, 96, 168, 54)
+	draw_rect(water, Color("2f5fb8"))
+	for k in 14:
+		var wy := 98.0 + roundf(sin(_time * 3.0 + k * 0.9))
+		draw_rect(Rect2(water.position.x + 4 + k * 12, wy, 6, 1), Color("7fb2ff"))
+	# The room inside, with a lamp, a bench and the crew.
+	var room := Rect2(268, 108, 144, 42)
+	draw_rect(room, Color("1a2140"))
+	draw_rect(Rect2(room.position.x + 64, room.position.y, 16, 2), Color("ffe9a8"))
+	draw_rect(Rect2(room.position.x + 8, room.end.y - 8, room.size.x - 16, 3), Color("3a4466"))
 	for k in 3:
-		var fx := wall.position.x + 40 + k * 26
-		draw_rect(Rect2(fx, wall.end.y - 30, 6, 12), Color("e8ecf5"))
-		draw_rect(Rect2(fx, wall.end.y - 36, 6, 6), Color("ffd0a0"))
-	for i in 10:
-		var y := 60.0 + i * 9.0
-		var x := fmod(_time * 140.0 + i * 41.0, 210.0) + 30.0
-		var stop := wall.position.x + 6.0
+		var cx := room.position.x + 30 + k * 40
+		var bob := roundf(absf(sin(_time * 2.0 + k)) * 1.0)
+		var top := room.end.y - 26 - bob
+		draw_rect(Rect2(cx - 5, top + 8, 11, 12), Color("e8ecf5"))       # suit
+		draw_rect(Rect2(cx - 7, top + 9, 2, 8), Color("c9d0e2"))         # arms
+		draw_rect(Rect2(cx + 6, top + 9, 2, 8), Color("c9d0e2"))
+		draw_rect(Rect2(cx - 2, top + 11, 5, 3), Color("3a6fd0"))        # chest panel
+		draw_rect(Rect2(cx - 4, top - 1, 9, 9), Color("e8ecf5"))         # helmet
+		draw_rect(Rect2(cx - 3, top + 1, 7, 5), Color("ffb347"))         # visor
+		draw_rect(Rect2(cx - 2, top + 2, 2, 1), Color("fff1c4"))         # visor shine
+		draw_rect(Rect2(cx - 4, top + 20, 3, 4), Color("aab3cc"))        # boots
+		draw_rect(Rect2(cx + 2, top + 20, 3, 4), Color("aab3cc"))
+	UiKit.draw_text(self, room.position + Vector2(44, 12), "CREW: SAFE", "small", UiKit.GREEN)
+
+	# Particles fly from the Sun and stop inside the mound or the water. None get into the room.
+	for i in 12:
+		var y := 74.0 + float(i) * 6.0
+		var stop := berm.position.x + 4.0 + float((i * 7) % 18) if i % 3 != 2 else water.position.x + 2.0 + float(i % 4) * 2.0
+		var x := 44.0 + fmod(_time * 150.0 + float(i) * 47.0, stop - 44.0 + 30.0)
 		if x < stop:
-			draw_line(Vector2(x, y), Vector2(x + 8, y), Color(1.0, 0.86, 0.5, 0.85), 1.0)
+			draw_line(Vector2(roundf(x), y), Vector2(roundf(x) + 8, y), Color(spark, 0.85), 1.0)
 		else:
-			draw_rect(Rect2(stop + float(i % 3), y, 2, 1), Color(1.0, 0.86, 0.5, 0.5))
-	UiKit.draw_text(self, Vector2(250, 64), "walls + water + regolith", "small", UiKit.TEXT)
+			var fade := clampf(1.0 - (x - stop) / 30.0, 0.0, 1.0)
+			draw_rect(Rect2(stop - 1, y - 1, 3, 3), Color(spark, 0.7 * fade))
+			draw_rect(Rect2(stop, y, 1, 1), Color(1, 1, 1, fade))
+
+	# Labels with pointer lines.
+	_callout(Vector2(240, 76), Vector2(196, 40), "REGOLITH (moon dust)", MOON_LIGHT)
+	_callout(Vector2(318, 90), Vector2(300, 22), "METAL WALL", Color("aab3cc"))
+	_callout(Vector2(404, 99), Vector2(390, 40), "WATER", Color("7fb2ff"))
+
+
+func _callout(point: Vector2, label_at: Vector2, text: String, color: Color) -> void:
+	# A straight pointer down from the label to the layer it names.
+	draw_rect(Rect2(point.x, label_at.y + 4, 1, point.y - label_at.y - 4), color)
+	draw_rect(Rect2(point - Vector2(1, 1), Vector2(3, 3)), color)
+	UiKit.draw_text(self, label_at, text, "small", color)
 
 
 ## A forecaster's screen: events in the feed, then the alert.
