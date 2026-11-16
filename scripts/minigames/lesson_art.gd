@@ -11,9 +11,15 @@ const SHADOW := Color(0.0, 0.0, 0.0, 0.45)
 
 static func frame(c: CanvasItem, t: float, title: String, why: String, accent: Color) -> void:
 	c.draw_rect(Rect2(0, 0, 480, 270), Color(0.02, 0.03, 0.08, 0.78))
+	# Twinkling stars behind the panel make the backdrop feel alive.
+	for i in 40:
+		var sx := float((i * 97) % 480)
+		var sy := float((i * 53) % 270)
+		var tw := 0.25 + 0.35 * (0.5 + 0.5 * sin(t * 2.0 + i * 1.7))
+		c.draw_rect(Rect2(sx, sy, 1, 1), Color(1, 1, 1, tw))
 	c.draw_rect(Rect2(PANEL.position + Vector2(3, 4), PANEL.size), SHADOW)
 	c.draw_rect(PANEL, UiKit.PANEL)
-	c.draw_rect(PANEL, accent, false, 1.0)
+	c.draw_rect(PANEL, Color(accent, 0.75 + 0.25 * sin(t * 2.5)), false, 1.0)
 	c.draw_rect(PANEL.grow(-2), Color(accent, 0.25), false, 1.0)
 	for corner in [PANEL.position, Vector2(PANEL.end.x - 4, PANEL.position.y), Vector2(PANEL.position.x, PANEL.end.y - 4), PANEL.end - Vector2(4, 4)]:
 		c.draw_rect(Rect2(corner, Vector2(4, 4)), accent)
@@ -27,7 +33,12 @@ static func frame(c: CanvasItem, t: float, title: String, why: String, accent: C
 	for x in range(int(STAGE.position.x) + 8, int(STAGE.end.x), 16):
 		for y in range(int(STAGE.position.y) + 8, int(STAGE.end.y), 16):
 			c.draw_rect(Rect2(x, y, 1, 1), Color(1, 1, 1, 0.06))
+	# Slow scan light across the stage, like a monitor.
+	var scan := fmod(t * 40.0, STAGE.size.y + 40.0) - 20.0
+	if scan > 0.0 and scan < STAGE.size.y:
+		c.draw_rect(Rect2(STAGE.position.x, STAGE.position.y + scan, STAGE.size.x, 1), Color(accent, 0.10))
 	c.draw_rect(STAGE, UiKit.LINE, false, 1.0)
+	c.draw_rect(Rect2(STAGE.position, Vector2(STAGE.size.x, 1)), Color(accent, 0.35))
 
 
 ## Instruction line inside the stage's top-left, on a dark chip.
