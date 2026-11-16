@@ -26,12 +26,15 @@ func current_objective() -> Dictionary:
 		MissionDirector.Stage.BRIEFING:
 			wanted_id = "Speak with the mentors"
 		MissionDirector.Stage.TRAINING:
-			for id: String in ["Sort the selection cards", "Find Engineer Rivera", "Complete power console training", "Robotic arm drill"]:
+			for id: String in ["Sort the selection cards", "Find Engineer Rivera", "Complete power console training", "Robotic arm drill", "Suit Up", "Floaty Fix"]:
 				for task in entries():
 					if task.get("id", "") == id and not task.done:
 						return task
 		MissionDirector.Stage.GRADUATED:
-			wanted_id = "Graduate and travel to the outpost" if MissionDirector.academy_done() else ("Robotic arm drill" if not GameState.get_flag(&"day1_arm") else "Sort the selection cards")
+			for candidate: String in ["Sort the selection cards", "Robotic arm drill", "Suit Up", "Floaty Fix", "Graduate and travel to the outpost"]:
+				for task in entries():
+					if task.get("id", "") == candidate and not task.done:
+						return task
 		MissionDirector.Stage.CHECKS:
 			for task in entries():
 				if task.get("facility", "") == "Outpost" and not task.done:
@@ -61,6 +64,8 @@ func entries() -> Array[Dictionary]:
 	if d.stage >= d.Stage.TRAINING:
 		_add(list, "Sort the selection cards", "Talk to Commander Okafor and sort real astronaut requirements from myths.", GameState.get_flag(&"day1_selection"))
 		_add(list, "Robotic arm drill", "Capture three cargo ships with the robotics trainer in the east wing.", GameState.get_flag(&"day1_arm"))
+		_add(list, "Suit Up", "Use the east robotics trainer. Why: suits supply air, pressure and cooling.", GameState.get_flag(&"day1_suit"))
+		_add(list, "Floaty Fix", "Use the east robotics trainer. Why: careful movement helps spacewalk work.", GameState.get_flag(&"day1_pool"))
 		_add(list, "Find Engineer Rivera", "Visit the east training workshop and talk to Rivera.", GameState.get_flag(&"mentor_engineer"))
 		_add(list, "Complete power console training", "Postpone a load and keep the battery above empty.", d.can_graduate())
 		_add(list, "Earn your certification", "Pass the training scenario to earn the certificate.", d.can_graduate())
@@ -89,6 +94,8 @@ func _add(list: Array[Dictionary], title: String, description: String, done: boo
 		"Earn your certification": ["Academy", "rivera"],
 		"Sort the selection cards": ["Academy", "commander"],
 		"Robotic arm drill": ["Academy", "arm"],
+		"Suit Up": ["Academy", "arm"],
+		"Floaty Fix": ["Academy", "arm"],
 		"Graduate and travel to the outpost": ["Outpost", "entrance"],
 		"Check outpost power": ["Outpost", "power"],
 		"Check the greenhouse": ["Outpost", "crops"],

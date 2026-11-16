@@ -180,6 +180,7 @@ func _build() -> void:
 	_body.add_child(buttons)
 	_first_button = _add_button(buttons, "Try again", func() -> void: _finish(&"retry"))
 	_add_button(buttons, "Field notes %d/%d" % [FieldNotes.unlocked_count(), FieldNotes.NOTES.size()], func() -> void: PauseMenu.open_page("notes"))
+	_add_button(buttons, "Badges", func() -> void: PauseMenu.open_page("badges"))
 	_add_button(buttons, "Sources", _show_sources)
 	_add_button(buttons, "Look around", func() -> void: _finish(&"stay"))
 	_add_button(buttons, "Academy", func() -> void: _finish(&"academy"))

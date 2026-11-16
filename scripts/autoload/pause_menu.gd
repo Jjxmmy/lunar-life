@@ -143,12 +143,17 @@ func _show_page(page: String) -> void:
 	var back_action: Callable = _resume if _direct else _show_page.bind("home")
 	var back_text := "Close" if _direct else "Back"
 	match page:
+		"badges":
+			_heading("ASTRONAUT TRAINING BADGES")
+			_text(_content, MissionDirector.training_badges())
+			first = _button(back_text, back_action)
 		"home":
 			_heading("PAUSED")
 			_text(_content, "Astronaut %s" % GameState.player_name, UiKit.TEXT_DIM)
 			first = _button("Resume", _resume)
 			_button("Field notes  %d/%d" % [FieldNotes.unlocked_count(), FieldNotes.NOTES.size()], _show_page.bind("notes"))
 			_button("Tasks", _show_page.bind("tasks"))
+			_button("Astronaut Training Badges", _show_page.bind("badges"))
 			_button("Help / Controls", _show_page.bind("help"))
 			# Toggling only changes this one button's text: the page is not rebuilt, so the
 			# panel keeps its size and the button keeps the keyboard focus. The N key does the same.

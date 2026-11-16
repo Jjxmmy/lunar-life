@@ -65,3 +65,11 @@
 
 ## To confirm with the team
 - Which work done before the event start may be included in the submission.
+
+## Day 3 interactive lessons
+- Dust Detective uses illustrative sample drawings. Lunar regolith growth comparisons are qualitative, based on NASA's account of the 2022 study: https://www.nasa.gov/humans-in-space/scientists-grow-plants-in-lunar-soil/ . The control illustration represents experimental control material, not a measured yield prediction.
+- Harvesting illustrates the fresh-food lesson already credited above. The three beds, harvest speed and science reward are gameplay simplifications.
+
+## Suit and pool training
+- NASA Spacewalk Spacesuit Basics: https://www.nasa.gov/centers-and-facilities/johnson/spacewalk-spacesuit-basics/ . Suit Up illustrates cooling, pressure, gloves, helmet and crew checks. Its sequence omits real procedures and is explicitly labelled simplified.
+- NASA Neutral Buoyancy Laboratory: https://www.nasa.gov/johnson/neutral-buoyancy-laboratory/ . Floaty Fix illustrates careful underwater task practice. The drift, speed limit and bolt count are game mechanics. Buoyancy simulates only some aspects of spacewalk work.

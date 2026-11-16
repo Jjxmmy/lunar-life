@@ -187,11 +187,16 @@ func _start_activity(id: StringName, flag: StringName) -> void:
 	var act := LearningActivity.start(self, id)
 	act.finished.connect(func(_c: int, _t: int) -> void:
 		GameState.set_flag(flag)
-		_refresh_hatch())
+		_refresh_hatch()
+		if flag == &"day1_arm":
+			_open_extra_training.call_deferred())
 
 
 func _on_arm_used() -> void:
 	if GameState.get_flag(&"day1_arm"):
+		if not GameState.get_flag(&"day1_suit") or not GameState.get_flag(&"day1_pool"):
+			_open_extra_training()
+			return
 		Dialogue.play(&"arm_done", "Robotics trainer", PackedStringArray(["Drill complete. Real crews practice for months before flying Canadarm2."]))
 		return
 	var drill := ArmDrill.open(self)
@@ -236,7 +241,7 @@ func _on_hatch_used() -> void:
 		SceneRouter.go_to(&"outpost")
 	else:
 		Dialogue.play(&"hatch_locked", "Lander dock", PackedStringArray([
-			"LOCKED. Finish Day 1 first: the selection cards, the robotic arm drill and Rivera's Power Console certificate."]))
+			"Finish selection and power training. The east trainer has robotics, Suit Up and pool practice."]))
 
 
 func _process(delta: float) -> void:
@@ -383,3 +388,19 @@ func _draw() -> void:
 	elif open and MissionDirector.stage == MissionDirector.Stage.GRADUATED:
 		var pulse := fmod(_time * 1.2, 1.0)
 		draw_arc(hatch_spot, 8.0 + pulse * 8.0, 0.0, TAU, 20, Color(UiKit.GREEN, 1.0 - pulse), 1.0)
+
+func _open_extra_training() -> void:
+	var lesson_kind: StringName = &"suit" if not GameState.get_flag(&"day1_suit") else &"pool"
+	if GameState.get_flag(&"day1_suit") and GameState.get_flag(&"day1_pool"):
+		return
+	var lesson := CanvasLayer.new()
+	lesson.set_script(load("res://scripts/minigames/academy_lesson.gd"))
+	lesson.set("kind", lesson_kind)
+	lesson.name = "HandsOnLesson"
+	lesson.connect("finished", func() -> void:
+		GameState.set_flag(StringName("day1_" + str(lesson_kind)))
+		_refresh_hatch())
+	lesson.tree_exited.connect(func() -> void:
+		if lesson_kind == &"suit" and GameState.get_flag(&"day1_suit"):
+			_open_extra_training.call_deferred())
+	add_child(lesson)

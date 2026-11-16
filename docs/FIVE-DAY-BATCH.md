@@ -61,3 +61,27 @@ On 2026-11-15 all three playtest runs passed 345 of 345 checks, and the layout c
 - The playtest answers every activity with the first option, so it checks the flow, not the answer keys.
 - Speed 4 is too fast for the playtest's walking bot. Use speed 3.
 - The arm drill and the experiment take keyboard / gamepad input. Mouse clicks only work in the panels.
+
+## Final-push work in progress
+- Day 2 planting now uses a seed/pillow, hold-to-water reservoir and grow-light interaction.
+- Day 2 health now uses timed exercise beats with encouraging retry behavior.
+- Escape leaves either activity without completing its mission task.
+- Playtest autopilot uses the activity interactions and handles Day 4 shelter preparation before logging.
+- These are initial implementations. The remaining final-push brief, visual review, browser validation and additional input testing are pending.
+
+## Day 3 interactive update
+- Dust Detective replaces regolith question panels with six illustrated samples and three sorting trays. The result compares healthier control growth with stressed lunar-regolith growth using illustrative graphics.
+- First Harvest replaces the harvest quiz with a small walkable activity. Collect three ripe beds in any order using movement and E. Completed lessons award science, complete the existing task and unlock its Field Notes.
+- Existing Light Lab remains available at the greenhouse lamp control.
+- Escape exits without task credit. Duplicate harvesting is rejected. Result confirmation is guarded against duplicate rewards.
+- Rendered screenshots: tools/shots/day3_dust_detective.png and tools/shots/day3_harvest.png.
+- Simplifications: illustrative particles and plant growth, a compact harvesting overlay, no galley-delivery animation. Dedicated gamepad hardware testing remains pending.
+- Validation: standard five-day playtest and both rover/late-arrival variants passed. Targeted completion, cancellation and duplicate-harvest checks passed. Godot still reports resource cleanup warnings at shutdown.
+
+## Day 1 suit and pool update
+- After the robotics activity, Suit Up and Floaty Fix open in sequence. Leaving with Escape allows retry at the same east-wing trainer.
+- Suit Up teaches five equipment functions. Floaty Fix uses drift and three bolts that can only be tightened while moving slowly.
+- New academy runs require both activities before departure. Existing outpost visits remain recognized. Suit and Spacewalk badges use saved flags and appear in the existing badge view.
+- Screenshots: tools/shots/day1_suit.png and tools/shots/day1_pool.png.
+- Existing training room hosts both activities as overlays. Dedicated gamepad hardware testing remains pending.
+- Validation: all three complete mission playtests passed. Rendered suit and pool screens inspected. Completion, wrong equipment, excessive drift, cancellation and modal cleanup checks passed. Shutdown resource cleanup warnings remain.

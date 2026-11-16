@@ -388,8 +388,7 @@ func _draw_destination() -> void:
 func _draw_power() -> void:
 	var hidden := _sun_hidden
 	var sun := Vector2(roundf(_sun_x), 96)
-	draw_rect(Rect2(sun - Vector2(11, 11), Vector2(22, 22)), Color("f6a64c"))
-	draw_rect(Rect2(sun - Vector2(8, 8), Vector2(16, 16)), Color("ffe08a"))
+	_draw_pixel_sun(sun, 11)
 	for ray in 8:
 		var dir := Vector2.RIGHT.rotated(TAU * float(ray) / 8.0 + _time * 0.3)
 		draw_rect(Rect2((sun + dir * 16.0).round(), Vector2(2, 2)), Color("ffc45e"))
@@ -421,8 +420,7 @@ func _draw_power() -> void:
 ## Slide 3: an eruption on the Sun sends particles across to the Moon. The card is the real record.
 func _draw_weather() -> void:
 	var sun := Vector2(64, 96)
-	draw_rect(Rect2(sun - Vector2(34, 34), Vector2(68, 68)), Color("f6a64c"))
-	draw_rect(Rect2(sun - Vector2(28, 28), Vector2(56, 56)), Color("ffd878"))
+	_draw_pixel_sun(sun, 34)
 	draw_rect(Rect2(sun + Vector2(4, -14), Vector2(10, 7)), Color("c9772f"))
 	draw_rect(Rect2(sun + Vector2(-16, 6), Vector2(7, 5)), Color("c9772f"))
 	# Eruption loop.
@@ -459,6 +457,27 @@ func _draw_weather() -> void:
 
 
 ## Slide 4: the crew you will meet, and the three jobs.
+func _draw_pixel_sun(center: Vector2, radius: int) -> void:
+	for layer_index in 4:
+		var r := radius + (3 - layer_index) * 3
+		var color := Color("ffac48")
+		color.a = 0.06 + float(layer_index) * 0.05
+		if layer_index == 3:
+			color = Color("ffd878")
+		for y in range(-r, r + 1):
+			var half := int(floor(sqrt(float(r * r - y * y))))
+			draw_rect(Rect2(center.x - half, center.y + y, half * 2 + 1, 1), color)
+	var core := maxi(2, radius / 2)
+	for y in range(-core, core + 1):
+		var half := int(floor(sqrt(float(core * core - y * y))))
+		draw_rect(Rect2(center.x - half, center.y + y, half * 2 + 1, 1), Color("fff0b1"))
+	for ray in 12:
+		var direction := Vector2.RIGHT.rotated(TAU * float(ray) / 12.0)
+		var length := 3 + int(absf(sin(_time * 2.0 + ray)) * 3.0)
+		for step in length:
+			draw_rect(Rect2((center + direction * (radius + 5 + step)).round(), Vector2.ONE), Color("ffc45e"))
+
+
 func _draw_mission() -> void:
 	draw_rect(Rect2(60, 60, 360, 110), Color("1b1d3d"))
 	draw_rect(Rect2(60, 60, 360, 110), Color("3c3f6e"), false, 1.0)

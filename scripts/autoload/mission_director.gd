@@ -146,7 +146,7 @@ func can_graduate() -> bool:
 
 ## Day 1 is complete: certificate plus the selection cards and the robotic-arm drill.
 func academy_done() -> bool:
-	return can_graduate() and GameState.get_flag(&"day1_selection") and GameState.get_flag(&"day1_arm")
+	return can_graduate() and GameState.get_flag(&"day1_selection") and GameState.get_flag(&"day1_arm") and (GameState.get_flag(&"outpost_visited") or (GameState.get_flag(&"day1_suit") and GameState.get_flag(&"day1_pool")))
 
 
 ## Starts (or restarts) the outpost mission. Keeps the astronaut profile;
@@ -219,6 +219,7 @@ func complete_task(task_id: StringName) -> bool:
 	if stage != Stage.CHECKS or not has_task_today(task_id) or is_task_done(task_id):
 		return false
 	tasks_done[task_id] = true
+	GameState.set_flag(StringName("training_" + str(task_id)))
 	objectives_changed.emit()
 	return true
 
@@ -395,3 +396,20 @@ func _read_json(path: String) -> Variant:
 		return null
 	var text := FileAccess.get_file_as_string(path)
 	return JSON.parse_string(text)
+
+func training_badges() -> String:
+	var badges: Array[String] = []
+	var checks := {
+		"Selection": bool(GameState.get_flag(&"day1_selection")),
+		"Suit": bool(GameState.get_flag(&"day1_suit")),
+		"Spacewalk": bool(GameState.get_flag(&"day1_pool")),
+		"Robotics": bool(GameState.get_flag(&"day1_arm")),
+		"Power": can_graduate(),
+		"Health": bool(GameState.get_flag(&"training_health")),
+		"Farming": bool(GameState.get_flag(&"training_harvest")),
+		"Space Weather": bool(GameState.get_flag(&"training_weather")),
+		"Shelter": bool(GameState.get_flag(&"training_drill")),
+	}
+	for title: String in checks:
+		badges.append(("[earned] " if checks[title] else "[locked] ") + title)
+	return "\n".join(badges)

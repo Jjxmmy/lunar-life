@@ -180,11 +180,16 @@ func _go(spot: String) -> void:
 
 
 ## Answers every panel of a learning activity (always the first option).
-func _do_activity(limit: int = 30) -> void:
+func _do_activity(limit: int = 60) -> void:
 	await _wait(0.4)
 	var n := 0
-	while _panel() != null and n < limit:
-		await _choose(0)
+	while (_panel() != null or get_tree().current_scene.get_node_or_null("HandsOnLesson") != null) and n < limit:
+		var lesson := get_tree().current_scene.get_node_or_null("HandsOnLesson")
+		if lesson != null:
+			lesson.set("autopilot", true)
+			await _wait(1.0)
+		else:
+			await _choose(0)
 		await _wait(0.15)
 		n += 1
 
@@ -257,6 +262,10 @@ func _end_day(next_day: int) -> void:
 	await _press(&"interact")
 	await _wait(0.4)
 	await _choose(0)
+	if D.day == 4 and not D.log_written:
+		await _press(&"interact")
+		await _wait(0.4)
+		await _choose(0)
 	_check(D.log_written and D.can_sleep(), "day %d: log saved, bunk unlocked" % (next_day - 1))
 	await _go("bunk")
 	_check(_target_prompt() == "Sleep", "day %d: the bunk offers sleep" % (next_day - 1))
@@ -418,7 +427,7 @@ func _run() -> void:
 		t += 0.2
 	_check(not is_instance_valid(drill), "three captures finish the drill")
 	await _do_activity()
-	_check(GameState.get_flag(&"day1_arm") and D.academy_done(), "Day 1 complete: selection, arm drill, certificate")
+	_check(GameState.get_flag(&"day1_arm") and GameState.get_flag(&"day1_suit") and GameState.get_flag(&"day1_pool") and D.academy_done(), "Day 1 complete: selection, robotics, suit, pool and power")
 
 	# The things to read each unlock a field note.
 	await _walk([Vector2(544, 264), Vector2(118, 264), Vector2(118, 122)])

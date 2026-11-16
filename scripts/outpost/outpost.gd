@@ -421,6 +421,17 @@ func _wants(task_id: StringName) -> bool:
 func _offer_activity(task_id: StringName) -> bool:
 	if not _wants(task_id):
 		return false
+	if task_id in [&"plant", &"health", &"regolith", &"harvest"]:
+		var lesson := CanvasLayer.new()
+		lesson.set_script(load("res://scripts/minigames/hands_on_lesson.gd" if task_id in [&"plant", &"health"] else "res://scripts/minigames/later_mission_lesson.gd"))
+		lesson.set("kind", task_id)
+		lesson.name = "HandsOnLesson"
+		lesson.connect("finished", func() -> void:
+			for note: String in LearningActivity.get_data(task_id).get("notes", []):
+				FieldNotes.unlock(StringName(note))
+			_complete(task_id))
+		add_child(lesson)
+		return true
 	var act := LearningActivity.start(self, task_id)
 	act.finished.connect(func(correct: int, _total: int) -> void:
 		ResourceSim.science_progress += correct
@@ -459,6 +470,21 @@ func _run_light_test() -> void:
 func _on_log_used() -> void:
 	var d := MissionDirector
 	if _offer_activity(&"weather"):
+		return
+	if d.day == 4 and d.can_write_log() and not GameState.get_flag(&"shield_prepared"):
+		var prep := ChoicePanel.open(self, "PREPARE THE SHELTER", "More shielding reduces simulated exposure. Moving water bags uses battery power and water. These costs are game units.", PackedStringArray(["Pack water bags: gain shielding; cost 4 power, 5 water", "Keep supplies: save power and water; less shielding"]))
+		prep.chosen.connect(func(index: int) -> void:
+			if index == 0 and (ResourceSim.battery < 4.0 or float(ResourceSim.life_support["water"]) < 5.0):
+				_hud.call(&"flash", "NEED 4 POWER AND 5 WATER - TRY AGAIN", UiKit.AMBER)
+				return
+			if index == 0:
+				ResourceSim.battery -= 4.0
+				ResourceSim.life_support["water"] -= 5.0
+				ResourceSim.shelter_readiness = 100.0
+			else:
+				ResourceSim.shelter_readiness = 70.0
+			GameState.set_flag(&"shield_prepared")
+			_hud.call(&"flash", "SHELTER PLAN SAVED - USE COMMS TO LOG", UiKit.TEAL))
 		return
 	if d.can_write_log():
 		var s := ResourceSim.get_snapshot()

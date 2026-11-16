@@ -91,7 +91,7 @@ func _reset_training() -> void:
 
 
 func _goal_text() -> String:
-	return "GOAL: the Sun is about to hide behind a ridge. Keep the battery from running out for %d hours. Switch off something that can wait, then press Go." % MissionDirector.TRAINING_HOURS
+	return "The battery saves power for shadow. A ridge will block the Sun. Keep air and heat on for %d hours; turn off jobs that can wait." % MissionDirector.TRAINING_HOURS
 
 
 # ---------------------------------------------------------------- UI building
@@ -235,7 +235,7 @@ func _add_load_row(parent: Control, def: LoadDef) -> void:
 	)
 	# Pointing at or focusing a switch explains what it powers.
 	var explain := func() -> void:
-		if _state == "ready" or not training_mode:
+		if _state in ["ready", "running"] or not training_mode:
 			_say("%s: %s" % [def.display_name.to_upper(), def.why_it_matters], UiKit.TEAL_DIM)
 	check.mouse_entered.connect(explain)
 	check.focus_entered.connect(explain)
@@ -360,7 +360,7 @@ func _on_game_hour_passed(game_hour: int) -> void:
 		_state = "passed"
 		ResourceSim.paused = true
 		MissionDirector.pass_training()
-		_say("CERTIFIED! Life Support stayed powered through the shadow because you saved battery early. Close this panel and walk to the lander dock.", UiKit.GREEN)
+		_say("You learned: saving power keeps air and heat on in shadow! Training passed. Close this panel and walk to the lander dock.", UiKit.GREEN)
 
 
 func _close() -> void:
