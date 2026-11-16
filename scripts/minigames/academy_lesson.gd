@@ -70,49 +70,118 @@ func _finish_lesson() -> void:
 	finished.emit()
 	queue_free()
 func _draw_activity() -> void:
-	_canvas.draw_rect(Rect2(0,0,480,270),UiKit.INK)
-	UiKit.draw_text(_canvas,Vector2(20,25),"SUIT UP!" if kind == &"suit" else "FLOATY FIX - TRAINING POOL","title",UiKit.AMBER)
+	var c := _canvas
+	var suit := kind == &"suit"
+	LessonArt.frame(c, _time, "SUIT UP!" if suit else "FLOATY FIX - TRAINING POOL",
+		"Why: a spacesuit is a tiny spaceship that keeps you alive." if suit else "Why: astronauts practise spacewalk jobs in a giant pool.",
+		UiKit.TEAL)
 	if _result:
-		UiKit.draw_text(_canvas,Vector2(20,80),"TRAINING COMPLETE - %d STARS" % maxi(1,3 - _mistakes / 3),"title",UiKit.GREEN)
-		var fact := "A suit provides air, pressure, cooling and protection." if kind == &"suit" else "Gentle movements help you stop and work carefully."
-		UiKit.draw_text(_canvas,Vector2(20,115),"You learned: " + fact,"small",UiKit.TEXT)
-		UiKit.draw_text(_canvas,Vector2(20,150),"E: earn badge    Esc: leave without completion","small",UiKit.TEXT)
+		var learned := "A suit gives you air, pressure, cooling and protection. Each layer has a job." if suit \
+			else "Floating in water feels a bit like space. Move gently so you can stop and work."
+		LessonArt.result(c, _time, LessonArt.stars_for(_mistakes), learned)
+		LessonArt.footer(c, "", "Simplified training, not a real NASA procedure.")
 		return
-	if kind == &"suit":
-		UiKit.draw_text(_canvas,Vector2(20,48),"Why: your body needs air, pressure and cooling.","small",UiKit.TEXT)
-		UiKit.draw_text(_canvas,Vector2(20,67),"Left/right: choose equipment. E: equip or check it.","small",UiKit.TEXT)
-		_canvas.draw_rect(Rect2(220,120,40,42),UiKit.TEAL if _step >= 1 else UiKit.PANEL)
-		_canvas.draw_rect(Rect2(220,160,15,26),UiKit.PANEL)
-		_canvas.draw_rect(Rect2(245,160,15,26),UiKit.PANEL)
-		if _step >= 1:
-			for tube in 4:
-				_canvas.draw_line(Vector2(225+tube*8,124),Vector2(225+tube*8,156),UiKit.TEXT_DIM,1)
-		_canvas.draw_circle(Vector2(240,105),14,UiKit.AMBER_DIM)
-		if _step >= 2:
-			_canvas.draw_rect(Rect2(216,118,48,46),UiKit.TEXT)
-			_canvas.draw_rect(Rect2(203,122,13,28),UiKit.TEXT)
-			_canvas.draw_rect(Rect2(264,122,13,28),UiKit.TEXT)
-			_canvas.draw_rect(Rect2(220,160,15,26),UiKit.TEXT)
-			_canvas.draw_rect(Rect2(245,160,15,26),UiKit.TEXT)
-		if _step >= 3:
-			_canvas.draw_rect(Rect2(199,145,12,14),UiKit.TEXT)
-			_canvas.draw_rect(Rect2(269,145,12,14),UiKit.TEXT)
-		if _step >= 4:
-			_canvas.draw_arc(Vector2(240,112),23,0,TAU,24,UiKit.TEAL,2)
-		UiKit.draw_text(_canvas,Vector2(20,207),"< " + PARTS[_choice] + " >    %d / 5 ready" % _step,"title",UiKit.AMBER)
+	if suit:
+		LessonArt.instruction(c, "Left/Right: pick the next part.  E: put it on.")
+		LessonArt.pips(c, Vector2(LessonArt.STAGE.end.x - 6, LessonArt.STAGE.position.y + 8), _step, PARTS.size(), UiKit.GREEN)
+		# Suit stand with a soft spotlight.
+		c.draw_circle(Vector2(240, 150), 54, Color(UiKit.TEAL, 0.06))
+		c.draw_rect(Rect2(214, 192, 52, 4), UiKit.LINE)
+		_draw_suit(Vector2(240, 190), _step)
+		# Equipment rack: one chip per part, done ones ticked.
+		for i in PARTS.size():
+			var r := Rect2(34 + i * 84, 196, 78, 15)
+			if i < _step:
+				c.draw_rect(r, Color(UiKit.GREEN, 0.14))
+				c.draw_rect(r, UiKit.GREEN, false, 1.0)
+				UiKit.draw_text(c, r.position + Vector2(4, 11), "+ " + _short(PARTS[i]), "small", UiKit.GREEN)
+			else:
+				LessonArt.chip(c, r, _short(PARTS[i]), i == _choice, _time)
 	else:
-		UiKit.draw_text(_canvas,Vector2(20,48),"Why: astronauts practise spacewalk jobs underwater.","small",UiKit.TEXT)
-		UiKit.draw_text(_canvas,Vector2(20,67),"Move gently. Stop near each numbered bolt. E: tighten.","small",UiKit.TEXT)
-		_canvas.draw_rect(Rect2(50,82,380,130),Color("123f60"))
-		for i in 12:
-			_canvas.draw_circle(Vector2(65+i*30,205-fmod(_time*12+i*13,115)),2,UiKit.TEAL_DIM)
+		LessonArt.instruction(c, "WASD: swim gently.  Stop at the glowing bolt.  E: tighten.")
+		LessonArt.pips(c, Vector2(LessonArt.STAGE.end.x - 6, LessonArt.STAGE.position.y + 8), _score, BOLTS.size(), UiKit.GREEN)
+		var pool := Rect2(LessonArt.STAGE.position + Vector2(1, 1), LessonArt.STAGE.size - Vector2(2, 2))
+		for band in 6:
+			c.draw_rect(Rect2(pool.position.x, pool.position.y + band * pool.size.y / 6.0, pool.size.x, pool.size.y / 6.0 + 1), Color("1a5c86").lerp(Color("0b2a4a"), band / 5.0))
+		for ray in 5:
+			var x := 70.0 + ray * 85.0 + sin(_time * 0.6 + ray) * 8.0
+			c.draw_colored_polygon(PackedVector2Array([Vector2(x, pool.position.y), Vector2(x + 14, pool.position.y), Vector2(x + 40, pool.end.y), Vector2(x + 22, pool.end.y)]), Color(1, 1, 1, 0.04))
+		# Station mock-up: a truss with three bolt plates.
+		c.draw_rect(Rect2(120, 104, 290, 8), Color("8a93b0"))
+		c.draw_rect(Rect2(120, 104, 290, 2), Color("c9cfe0"))
+		for k in 8:
+			c.draw_line(Vector2(130 + k * 36, 112), Vector2(148 + k * 36, 104), Color("5b6584"), 1.0)
+		c.draw_rect(Rect2(150, 112, 6, 90), Color("8a93b0"))
+		c.draw_rect(Rect2(340, 112, 6, 90), Color("8a93b0"))
 		for i in BOLTS.size():
-			_canvas.draw_rect(Rect2(BOLTS[i]-Vector2(7,7),Vector2(14,14)),UiKit.GREEN if i < _score else UiKit.AMBER_DIM)
-			UiKit.draw_text(_canvas,BOLTS[i]+Vector2(-2,3),str(i+1),"small",UiKit.TEXT)
+			var b: Vector2 = BOLTS[i]
+			c.draw_rect(Rect2(b - Vector2(10, 10), Vector2(20, 20)), Color("3a4466"))
+			var col := UiKit.GREEN if i < _score else (UiKit.AMBER if i == _score else Color("8a93b0"))
+			var hexp := PackedVector2Array()
+			for k in 6:
+				hexp.append(b + Vector2.RIGHT.rotated(k * PI / 3.0 + (_time * 2.0 if i < _score else 0.0)) * 6.0)
+			c.draw_colored_polygon(hexp, col)
+			UiKit.draw_text(c, b + Vector2(-2, 4), str(i + 1), "small", UiKit.INK)
 			if i == _score:
-				_canvas.draw_arc(BOLTS[i],20,0,TAU,24,UiKit.AMBER,1)
-		_canvas.draw_texture_rect(_astronaut,Rect2(_position.round()-Vector2(16,16),Vector2(32,32)),false)
-	UiKit.draw_text(_canvas,Vector2(20,232),_feedback,"small",UiKit.TEXT)
-	var caveat := "Simplified training, not a real suit procedure." if kind == &"suit" else "Buoyancy simulates some parts of working in space."
-	UiKit.draw_text(_canvas,Vector2(20,249),caveat,"small",UiKit.TEXT_DIM)
-	UiKit.draw_text(_canvas,Vector2(20,264),"Esc: leave and try again","small",UiKit.TEXT_DIM)
+				c.draw_arc(b, 16.0 + sin(_time * 4.0) * 2.0, 0, TAU, 24, UiKit.AMBER, 1.0)
+		for i in 14:
+			var bx := 40.0 + i * 30.0
+			c.draw_circle(Vector2(bx, pool.end.y - fmod(_time * 14.0 + i * 17.0, pool.size.y)), 1.5 + (i % 2), Color(1, 1, 1, 0.35))
+		# Tether from the pool edge, then the diver.
+		c.draw_line(Vector2(pool.position.x + 4, pool.end.y - 6), _position + Vector2(0, -4), Color(UiKit.AMBER, 0.6), 1.0)
+		c.draw_texture_rect(_astronaut, Rect2(_position.round() - Vector2(16, 16), Vector2(32, 32)), false)
+		# Drift meter: words + bar.
+		var speed := clampf(_velocity.length() / 48.0, 0.0, 1.0)
+		var calm := _velocity.length() <= 24.0
+		c.draw_rect(Rect2(pool.end.x - 110, pool.end.y - 14, 100, 6), Color(0, 0, 0, 0.5))
+		c.draw_rect(Rect2(pool.end.x - 110, pool.end.y - 14, 100 * speed, 6), UiKit.GREEN if calm else UiKit.RED)
+		UiKit.draw_text(c, Vector2(pool.end.x - 110, pool.end.y - 18), "Drift: " + ("gentle" if calm else "too fast!"), "small", UiKit.TEXT)
+	LessonArt.footer(c, _feedback, "Simplified training, not a real NASA procedure." if suit else "Water copies some parts of working in space.")
+
+
+func _short(part: String) -> String:
+	return {"Cooling garment": "Cooling", "Pressure suit": "Suit", "Gloves": "Gloves", "Helmet": "Helmet", "Air and safety check": "Air check"}.get(part, part)
+
+
+## The astronaut on the stand, wearing `layers` of the five parts.
+func _draw_suit(feet: Vector2, layers: int) -> void:
+	var c := _canvas
+	var skin := Color("c98a5a")
+	var under := Color("3a4a7a")
+	var x := feet.x
+	var y := feet.y
+	# Body base.
+	c.draw_rect(Rect2(x - 12, y - 52, 24, 30), under)
+	c.draw_rect(Rect2(x - 11, y - 22, 9, 22), under)
+	c.draw_rect(Rect2(x + 2, y - 22, 9, 22), under)
+	c.draw_rect(Rect2(x - 18, y - 50, 6, 22), under)
+	c.draw_rect(Rect2(x + 12, y - 50, 6, 22), under)
+	c.draw_circle(Vector2(x, y - 62), 9, skin)
+	c.draw_rect(Rect2(x - 3, y - 64, 2, 2), UiKit.INK)
+	c.draw_rect(Rect2(x + 2, y - 64, 2, 2), UiKit.INK)
+	if layers >= 1:   # cooling garment: blue with water tubes
+		c.draw_rect(Rect2(x - 12, y - 52, 24, 30), Color("4f7dff"))
+		for k in 4:
+			c.draw_line(Vector2(x - 9 + k * 6, y - 50), Vector2(x - 9 + k * 6, y - 24), Color("a8c4ff"), 1.0)
+	if layers >= 2:   # pressure suit: white, orange stripes, bulky
+		var w := Color("eef1f8")
+		c.draw_rect(Rect2(x - 15, y - 54, 30, 34), w)
+		c.draw_rect(Rect2(x - 13, y - 22, 12, 22), w)
+		c.draw_rect(Rect2(x + 1, y - 22, 12, 22), w)
+		c.draw_rect(Rect2(x - 22, y - 52, 8, 24), w)
+		c.draw_rect(Rect2(x + 14, y - 52, 8, 24), w)
+		c.draw_rect(Rect2(x - 15, y - 34, 30, 3), Color("e37a40"))
+		c.draw_rect(Rect2(x - 6, y - 50, 12, 8), Color("9aa3bd"))   # chest controls
+		c.draw_rect(Rect2(x - 4, y - 48, 2, 2), UiKit.GREEN)
+		c.draw_rect(Rect2(x + 1, y - 48, 2, 2), UiKit.AMBER)
+	if layers >= 3:   # gloves
+		c.draw_rect(Rect2(x - 23, y - 30, 10, 8), Color("9aa3bd"))
+		c.draw_rect(Rect2(x + 13, y - 30, 10, 8), Color("9aa3bd"))
+	if layers >= 4:   # helmet with visor and shine
+		c.draw_circle(Vector2(x, y - 62), 14, Color("eef1f8"))
+		c.draw_circle(Vector2(x, y - 61), 10, Color("2f5f8a"))
+		c.draw_rect(Rect2(x - 6, y - 67, 4, 3), Color(1, 1, 1, 0.7))
+	if layers >= 5:   # air check passed
+		c.draw_circle(Vector2(x + 26, y - 74), 7, UiKit.GREEN)
+		c.draw_line(Vector2(x + 23, y - 74), Vector2(x + 25, y - 71), UiKit.INK, 2.0)
+		c.draw_line(Vector2(x + 25, y - 71), Vector2(x + 30, y - 78), UiKit.INK, 2.0)
