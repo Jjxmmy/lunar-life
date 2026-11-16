@@ -90,8 +90,14 @@
     },
     {
      "id": "weather",
-     "title": "Space weather watch",
-     "description": "Read the space-weather feed at the comms desk.",
+     "title": "Storm Spotter",
+     "description": "Watch the sun-cam at the comms desk and catch the flares and CMEs.",
+     "destination": "log"
+    },
+    {
+     "id": "message",
+     "title": "Message to Earth",
+     "description": "Send a radio message from the comms desk and see how long it takes.",
      "destination": "log"
     },
     {

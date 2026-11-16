@@ -237,7 +237,7 @@ func _do_day() -> void:
 				await _shot("day3_experiment_result")
 				await _press(&"interact")   # log the results
 				await _wait(0.3)
-			&"weather":
+			&"weather", &"message":
 				await _go("log")
 				await _press(&"interact")
 				await _wait(0.4)

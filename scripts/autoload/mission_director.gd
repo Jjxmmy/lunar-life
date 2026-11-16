@@ -409,6 +409,7 @@ func training_badges() -> String:
 		"Farming": bool(GameState.get_flag(&"training_harvest")),
 		"Space Weather": bool(GameState.get_flag(&"training_weather")),
 		"Shelter": bool(GameState.get_flag(&"training_drill")),
+		"Communication": bool(GameState.get_flag(&"training_message")),
 	}
 	for title: String in checks:
 		badges.append(("[earned] " if checks[title] else "[locked] ") + title)

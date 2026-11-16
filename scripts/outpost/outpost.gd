@@ -421,9 +421,14 @@ func _wants(task_id: StringName) -> bool:
 func _offer_activity(task_id: StringName) -> bool:
 	if not _wants(task_id):
 		return false
-	if task_id in [&"plant", &"health", &"regolith", &"harvest"]:
+	if task_id in [&"plant", &"health", &"regolith", &"harvest", &"weather", &"message"]:
 		var lesson := CanvasLayer.new()
-		lesson.set_script(load("res://scripts/minigames/hands_on_lesson.gd" if task_id in [&"plant", &"health"] else "res://scripts/minigames/later_mission_lesson.gd"))
+		var script_path := "res://scripts/minigames/later_mission_lesson.gd"
+		if task_id in [&"plant", &"health"]:
+			script_path = "res://scripts/minigames/hands_on_lesson.gd"
+		elif task_id in [&"weather", &"message"]:
+			script_path = "res://scripts/minigames/day4_lesson.gd"
+		lesson.set_script(load(script_path))
 		lesson.set("kind", task_id)
 		lesson.name = "HandsOnLesson"
 		lesson.connect("finished", func() -> void:
@@ -469,7 +474,7 @@ func _run_light_test() -> void:
 
 func _on_log_used() -> void:
 	var d := MissionDirector
-	if _offer_activity(&"weather"):
+	if _offer_activity(&"weather") or _offer_activity(&"message"):
 		return
 	if d.day == 4 and d.can_write_log() and not GameState.get_flag(&"shield_prepared"):
 		var prep := ChoicePanel.open(self, "PREPARE THE SHELTER", "More shielding reduces simulated exposure. Moving water bags uses battery power and water. These costs are game units.", PackedStringArray(["Pack water bags: gain shielding; cost 4 power, 5 water", "Keep supplies: save power and water; less shielding"]))

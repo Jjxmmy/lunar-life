@@ -10,6 +10,8 @@ const CASES := [
 	["res://scripts/minigames/later_mission_lesson.gd", &"regolith", {"_score": 0, "_choice": 0}],
 	["res://scripts/minigames/later_mission_lesson.gd", &"harvest", {"_score": 1, "_collected": [0], "_position": Vector2(290, 175)}],
 	["res://scripts/minigames/hands_on_lesson.gd", &"plant", {"_step": 3, "_result": true, "_mistakes": 1}],
+	["res://scripts/minigames/day4_lesson.gd", &"weather", {"_score": 2, "_event": 0, "_event_t": 0.8, "_answered": true, "_feedback": "Good catch! A flare is a bright flash."}],
+	["res://scripts/minigames/day4_lesson.gd", &"message", {"_step": 3, "_signal": 4.0}],
 ]
 
 
