@@ -34,6 +34,11 @@
      "description": "Ride the exercise bike in the power room and log your health check.",
      "destination": "bike"
     }
+   ],
+   "recap": [
+    "Plants grow in pillows, not soil.",
+    "Wicks drink water up like a straw.",
+    "Astronauts exercise about 2 hours a day."
    ]
   },
   {
@@ -70,6 +75,11 @@
      "description": "Taste the first leaves with Dr. Tanaka.",
      "destination": "tanaka"
     }
+   ],
+   "recap": [
+    "Red and blue light grow plants best.",
+    "Moon dust is sharp and is not soil.",
+    "Fresh food keeps the crew happy."
    ]
   },
   {
@@ -106,6 +116,11 @@
      "description": "Practice: hold E to crank the shelter hatch open, then step inside.",
      "destination": "shelter"
     }
+   ],
+   "recap": [
+    "Flares and CMEs are warning signs.",
+    "A message to the Moon takes 1.3 seconds.",
+    "On Mars, crews must fix things themselves."
    ]
   },
   {

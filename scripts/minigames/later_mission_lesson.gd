@@ -77,7 +77,7 @@ func _draw_activity() -> void:
 		UiKit.AMBER if dust else UiKit.GREEN)
 	if _result:
 		var learned := "Moon dust is sharp and has no plant food. In 2022, plants grown in Apollo moon dust survived but were stressed." if dust \
-			else "Fresh leaves add vitamins and variety to space meals - and caring for plants cheers up the crew."
+			else "Fresh leaves add vitamins and cheer up the crew. Fun fact: astronauts first ate space-grown lettuce on August 10, 2015!"
 		LessonArt.result(c, _time, 3, learned)
 		LessonArt.footer(c, "", "Illustration based on a NASA-funded 2022 study." if dust else "Based on NASA's Veggie harvests on the space station.")
 		return

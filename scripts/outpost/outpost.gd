@@ -495,7 +495,11 @@ func _on_log_used() -> void:
 		var s := ResourceSim.get_snapshot()
 		var body := "Day %d of %d: %s\n\nBattery %d of %d cells.  Crop health %d.  Science %d.\n\nSave today's log and get some rest." % [
 			d.day, d.FINAL_DAY, str(d.day_plan().get("title", "")), s["battery_cells"], s["battery_cells_total"], int(s["crop_health"]), s["science_points"]]
-		var panel := ChoicePanel.open(self, "EVENING LOG", body, PackedStringArray(["Save the log"]))
+		var recap: Array = d.day_plan().get("recap", [])
+		var cards := PackedStringArray(recap) if not recap.is_empty() else PackedStringArray(["Save the log"])
+		body = "Day %d of %d. Tell Earth one thing you learned today!\n\nBattery %d of %d.  Crops %d.  Science %d." % [
+			d.day, d.FINAL_DAY, s["battery_cells"], s["battery_cells_total"], int(s["crop_health"]), s["science_points"]]
+		var panel := ChoicePanel.open(self, "MESSAGE TO EARTH - EVENING LOG", body, cards)
 		panel.chosen.connect(func(_i: int) -> void:
 			if d.write_log():
 				_hud.call(&"flash", "LOG SAVED", UiKit.TEAL))

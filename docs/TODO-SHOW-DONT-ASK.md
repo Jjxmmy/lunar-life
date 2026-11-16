@@ -1,6 +1,9 @@
 # To do: "show it, don't ask it" plan (from team feedback, 2026-11-15)
 
 Done in this build:
+- [x] Okafor's John Glenn line (no age limit, flew at 77 in 1998)
+- [x] Rivera explains the battery as a water bottle for electricity
+- [x] Harvest fun fact: first space-grown lettuce eaten on August 10, 2015
 - [x] Storm Spotter (Day 4 sun-cam: catch flares and CMEs, ignore sunspots; DONKI event types)
 - [x] Message to Earth (Day 4: real 1.3 s Moon delay, Mars 3-22 min sped up, wait-or-act choice) + Communication badge
 - [x] Floaty Fix pool (drift physics, 3 bolts), Space Garden (seeds, wick tank, lights), Bone Builder (rhythm), Dust Detective, harvest - redrawn
@@ -24,5 +27,5 @@ Still to do:
 - [ ] Storm run: red pulse, crew run with you, Geiger click speeding up outside, spinning hatch wheel
 - [ ] Shelter power plan: live battery bottle vs crops/science split screen
 - [ ] Report: picture replay per star; badges and field notes pop with sound
-- [ ] Evening log: "Tell Earth one thing you learned" picture cards
+- [x] Evening log: "Tell Earth one thing you learned" cards (text cards; pictures still to do)
 - [ ] Questions only after the experience; pictures on every answer; recap quizzes as a rocket that climbs

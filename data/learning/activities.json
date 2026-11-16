@@ -14,7 +14,7 @@
         {"text": "You must already be a jet pilot.", "bin": 1,
          "explain": "Myth. No previous flight experience is required. Many astronauts are scientists, doctors and engineers who learn to fly the T-38 jet during training."},
         {"text": "You must be younger than 35.", "bin": 1,
-         "explain": "Myth. NASA has no age limit for astronaut candidates."},
+         "explain": "Myth! NASA has no age limit. John Glenn flew on the Space Shuttle in 1998 when he was 77."},
         {"text": "You must pass NASA's long-duration spaceflight physical exam.", "bin": 0,
          "explain": "Real. Candidates must be able to pass the long-duration flight physical. Vision only needs to be correctable to 20/20, so glasses are fine."},
         {"text": "You need years of professional work in your field after your degree (or many hours flying jets).", "bin": 0,

@@ -57,6 +57,7 @@
 - NASA Science, To Protect Artemis II Astronauts, NASA Experts Keep Eyes on Sun (solar particle events,
   shielding is about mass): https://science.nasa.gov/missions/artemis/artemis-2/to-protect-artemis-ii-astronauts-nasa-experts-keep-eyes-on-sun/
 - ESA, Protecting Artemis and lunar explorers from space radiation (the Moon has no magnetosphere)
+- NASA, John Glenn: STS-95 (1998), flew at age 77.
 - Simplified in the game: the light-recipe growth heights, crop health, and how much partial gravity protects
   bones (still being studied). The facts above are real; the numbers in play are game units.
 

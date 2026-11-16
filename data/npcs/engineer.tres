@@ -9,5 +9,5 @@ id = &"engineer"
 display_name = "Engineer Rivera"
 role = "Power Systems"
 sprite = ExtResource("2_tex")
-lines = PackedStringArray("This training simulates the Sun dropping behind lunar terrain.", "Life Support needs steady power. Batteries carry the habitat when solar panels are in shadow.", "Try the console: protect essential systems, then decide what can wait.")
+lines = PackedStringArray("A battery is like a water bottle for electricity. Sunlight fills it up.", "When the Sun drops behind a hill, nothing fills it. Life support keeps drinking.", "The shadow is coming. Keep life support on and switch off what can wait!")
 opens_scene = &""
