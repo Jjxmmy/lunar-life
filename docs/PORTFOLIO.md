@@ -18,7 +18,7 @@ Add a measurable result only when you have personally verified it. The repositor
 **Title:** Lunar Life — NASA Space Apps Challenge 2026  
 **Role:** Gameplay Programmer / Designer  
 **Team:** Kareem Dahrouj, Aryan Patel, and Jimmy Lam  
-**Project link:** [Your fork or published build]
+**Project link:** https://github.com/Jjxmmy/lunar-life
 
 **Description:**
 
@@ -42,7 +42,6 @@ Add a measurable result only when you have personally verified it. The repositor
 
 ## Before sharing
 
-- Replace the project link with your fork or a published build once available.
 - Name the other team members and retain the repository's [credits](../CREDITS.md).
 - Verify your role and any metrics against your own contributions and project evidence.
 - Avoid describing the alert as lunar radiation measurements or the game as real astronaut training.
